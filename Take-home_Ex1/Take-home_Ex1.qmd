@@ -1,0 +1,911 @@
+---
+title: "Take-home_Ex1"
+editor: visual
+format: 
+  html:
+    code-fold: true
+    code-summary: "code chunk"
+    fontsize: 18px
+    number-sections: true
+    number-depth: 2
+execute:
+  echo: true # all code chunk will appear
+  eval: true # all code chunk will running live (be evaluated)
+  warning: false # don't display warning
+  message: false
+---
+
+## Overview
+
+As urban infrastructures become increasingly digitized, data from sources like buses, taxis, and public utilities offer valuable insights into movement patterns over time and space. The widespread use of technologies like GPS and RFID in vehicles has generated massive datasets, including route and ridership data. Analyzing these datasets can reveal important patterns and characteristics of human movement in a city, benefiting urban management and transport service providers.
+
+This study aims to leverage Exploratory Spatial Data Analysis (ESDA), specifically Local Indicators of Spatial Association (LISA) and Emerging Hot Spot Analysis (EHSA), to uncover spatial and spatio-temporal mobility patterns among public bus passengers in Singapore.
+
+### 1.1 Packages Used
+
+The R packages used for the analysis are as follows:
+
+-   **sf**: Analyzes and models spatial dependencies in data.
+
+-   **tmap**: Creates thematic maps for visualizing geospatial data.
+
+-   **tidyverse**: A collection of R packages with a unified approach for data manipulation and visualization.
+
+-   **plotly**: Enables interactive and dynamic data visualizations.
+
+-   **zoo**: Handles and analyzes time series data.
+
+-   **Kendall**: Computes Kendall's tau rank correlation coefficient for assessing rank-based associations.
+
+-   **kableExtra:** Enhances 'knitr' package's 'kable()' function for styling HTML and LaTeX tables in R Markdown. It offers advanced formatting options like row/column customization, conditional styling, and captioning, elevating tables to publication quality.
+
+-   **ggrain:** R-package that allows you to create Raincloud plots - following the 'Grammar of Graphics' (i.e., ggplot2)
+
+-   [**DT**](https://rstudio.github.io/DT/)**:** Create interactive html tables
+
+```{r}
+pacman::p_load(sf, sfdep, tmap, tidyverse, plotly, zoo, Kendall, kableExtra, ggrain, DT)
+```
+
+### 1.2 Data Import
+
+#### **1.2.1 Apsatial data - Origin_destination_bus data**
+
+::: {.callout-note collapse="true" title="Import BusOD"}
+```{r}
+# Load each csv file into R separately
+bus08 <- read_csv("data/aspatial/origin_destination_bus_202308.csv")
+bus09 <- read_csv("data/aspatial/origin_destination_bus_202309.csv")
+bus10 <- read_csv("data/aspatial/origin_destination_bus_202310.csv")
+
+# Combine all rows into single dataframe
+origind <- rbind(bus08, bus09, bus10)
+
+str(origind)
+```
+:::
+
+::: {.callout-note collapse="true" title="Variables"}
+```{r}
+head(origind,10) %>%
+  kbl() %>%
+  kable_styling(
+    full_width = F, 
+    bootstrap_options = c("condensed", "responsive"))
+```
+:::
+
+::: {.callout-note collapse="true" title="Variables Description"}
+-   **YEAR_MONTH**: Data collection month in the format of YYYY-MM.
+
+-   **DAY_TYPE**: Weekday or Weekends/Holiday.
+
+-   **TIME_PER_HOUR**: Hour of the day in 24 hour format.
+
+-   **PT_TYPE**: Type of public transportation.
+
+-   **ORIGIN_PT_CODE**: Identifier for the bus stop where the trip originated.
+
+-   **DESTINATION_PT_CODE**: Identifier for the bus stop where the trip ended.
+
+-   **TOTAL_TRIPS**: Total number of trips recorded for each origin-destination pair.
+:::
+
+::: {.callout-note collapse="true" title="Summary Statistics and EDA"}
+```{r}
+summary(origind)
+```
+
+```{r}
+# Count unique values in ORIGIN_PT_CODE
+unique_origin_count <- n_distinct(origind$ORIGIN_PT_CODE)
+
+# Count unique values in DESTINATION_PT_CODE
+unique_destination_count <- n_distinct(origind$DESTINATION_PT_CODE)
+
+# Print the counts
+print(paste("Unique origins:", unique_origin_count))
+print(paste("Unique destinations:", unique_destination_count))
+
+```
+
+```{r}
+# Calculate the mean of TOTAL_TRIPS
+mean_total_trips <- median(origind$TOTAL_TRIPS)
+
+# Count the number of rows where TOTAL_TRIPS is above the mean
+rows_above_mean <- sum(origind$TOTAL_TRIPS > mean_total_trips)
+
+# Print the count
+print(rows_above_mean)
+
+```
+
+::: {.notebox .goldensnitch data-latex="goldensnitch"}
+-   Most of the data types have a Class and Mode of "character"
+
+-   Over a three-month period, a total of 17,118,005 combinations of bus trips were recorded.
+
+-   There are 5075 unique origin bus stops, and 5079 unique destination bus stops
+
+-   On average, there are 20.46 trips for each bus route, but the highest recorded number of trips for a single route is an exceptional 36,668. This significant discrepancy suggests there might be outliers or anomalies in the data, warranting additional investigation.
+
+-   In a dataset of 17 million trips, the low median of 4, high mean of 20.5, and a maximum of 38,000, along with over 7.9 million trips exceeding the median, indicate a right-skewed distribution. This suggests a concentration of lower-value trips with numerous higher-value outliers.
+:::
+:::
+
+#### **1.2.2 Geospatial data - bus_stop_location_data**
+
+::: {.callout-note collapse="true" title="Import BusStop"}
+```{r}
+busstop <- st_read(
+    dsn = "data/geospatial",
+    layer = "BusStop"
+  ) %>%
+  mutate(
+    BUS_STOP_N = as.factor(BUS_STOP_N),
+    BUS_ROOF_N = as.factor(BUS_ROOF_N),
+    LOC_DESC = as.factor(LOC_DESC)
+  )
+
+glimpse(busstop)
+```
+:::
+
+::: {.callout-note collapse="true" title="Coordinate reference system"}
+```{r}
+st_crs(busstop)
+```
+
+::: {.notebox .goldensnitch data-latex="goldensnitch"}
+The [EPSG.io](https://epsg.io/?q=Singapore) database indicates that the coordinate system for Singapore is SVY21, associated with the EPSG code 3414. However, the 'busstop' dataset is currently projected using SVY21 with an EPSG code of 9001, highlighting a need to change to correct it to the EPSG code of 3414.
+
+```{r}
+# Setting the CRS for the busstop data to EPSG 3414
+busstop <- st_set_crs(busstop, 3414) %>%
+  # Changing the column name for easier integration with main dataframe
+  mutate(
+    ORIGIN_PT_CODE = as.factor(BUS_STOP_N)
+  ) %>%
+  # Keeping only necessary columns for further analysis
+  select(
+    ORIGIN_PT_CODE, 
+    LOC_DESC,
+    geometry
+  )
+
+# Verifying the CRS assignment for busstop
+st_crs(busstop)
+
+```
+:::
+:::
+
+## Data Preparation
+
+### 2.1 Aspatial Data
+
+The task specified in this particular project requires the computation of passenger trips at the following specific timeframes.
+
+| Peak hour period             | Bus tap on time |
+|------------------------------|-----------------|
+| Weekday morning peak         | 6am to 9am      |
+| Weekday afternoon peak       | 5pm to 8pm      |
+| Weekend/holiday morning peak | 11am to 2pm     |
+| Weekend/holiday evening peak | 4pm to 7pm      |
+
+::: panel-tabset
+#### 2.1.1 Data Type Edit
+
+```{r}
+origind <- origind %>%
+  mutate(
+    ORIGIN_PT_CODE = as.factor(ORIGIN_PT_CODE),
+    DESTINATION_PT_CODE = as.factor(DESTINATION_PT_CODE)
+  )
+```
+
+::: {.notebox .goldensnitch data-latex="goldensnitch"}
+As mentioned before, ORIGIN_PT_CODE and DESTINATION_PT_CODE's data type are in character format. Because they represent busstop locations, they should be transformed into factors (categorical data type) for further analysis
+:::
+
+#### 2.1.2 Categorizing Data
+
+```{r}
+origind_agg <- origind %>%
+  # Classify trips into specific time periods based on day type and hour
+  mutate(period = ifelse(DAY_TYPE == "WEEKDAY" & 
+                         TIME_PER_HOUR >= 6 & TIME_PER_HOUR <= 9, 
+                         "Weekday morning peak",
+                    ifelse(DAY_TYPE == "WEEKDAY" & 
+                           TIME_PER_HOUR >= 17 & TIME_PER_HOUR <= 20,
+                           "Weekday evening peak",
+                      ifelse(DAY_TYPE == "WEEKENDS/HOLIDAY" &
+                             TIME_PER_HOUR >= 11 & TIME_PER_HOUR <= 14,
+                              "Weekend/PH morning peak",
+                        ifelse(DAY_TYPE == "WEEKENDS/HOLIDAY" & 
+                              TIME_PER_HOUR >= 16 & TIME_PER_HOUR <= 19,
+                               "Weekend/PH evening peak",
+                    "Others"))))
+  ) %>%
+  # Exclude data outside the specified periods for focused analysis
+  filter(
+    period != "Others"
+  ) %>%
+  # Aggregate the total number of trips by origin bus stop and month for each classified period
+  group_by(
+    YEAR_MONTH,
+    period,
+    ORIGIN_PT_CODE
+  ) %>%
+  summarise(
+    num_trips = sum(TOTAL_TRIPS)
+  ) %>%
+  ungroup()
+```
+
+::: {.notebox .goldensnitch data-latex="goldensnitch"}
+We categorize and preprocess the data into the time frames as shown above
+:::
+
+#### Preview
+
+```{r}
+list(origind_agg)
+```
+:::
+
+### 2.2 Data Checks and wrangling
+
+::: panel-tabset
+#### 2.2.1 Aspatial Check for duplicates
+
+```{r}
+
+# Count of dupes
+count_duplicate_rows <- function(df, df_name) {
+  df %>%
+    group_by_all() %>%
+    filter(n() > 1) %>%
+    ungroup() %>%
+    summarise(df_name = df_name, row_count = n())
+}
+
+duplicate1 <- count_duplicate_rows(bus08, "bus08")
+duplicate2 <- count_duplicate_rows(bus09, "bus09")
+duplicate3 <- count_duplicate_rows(bus10, "bus10")
+
+all_duplicates <- bind_rows(duplicate1, duplicate2, duplicate3)
+
+# Output the combined counts
+print(all_duplicates)
+
+```
+
+::: {.notebox .goldensnitch data-latex="goldensnitch"}
+There no duplicates which could adversely impact any join functions in the latter part of the project
+:::
+
+#### 2.2.2 Aspatial Check for Null
+
+```{r}
+# Function to count the number of rows containing null values
+count_null_rows <- function(df, df_name) {
+  df %>%
+    filter(if_any(everything(), is.na)) %>%
+    summarise(df_name = df_name, row_count = n())
+}
+
+# Apply the function to each dataframe to count rows with nulls
+nulls1 <- count_null_rows(bus08, "bus08")
+nulls2 <- count_null_rows(bus09, "bus09")
+nulls3 <- count_null_rows(bus10, "bus10")
+
+# Combine the results
+all_nulls <- bind_rows(nulls1, nulls2, nulls3)
+
+# Print the counts of rows with nulls
+print(all_nulls)
+
+```
+
+::: {.notebox .goldensnitch data-latex="goldensnitch"}
+There no nulls which could adversely impact any join functions in the latter part of the project
+:::
+:::
+
+## Data Exploration
+
+Understanding daily passenger trip distribution is crucial for urban traffic management and congestion relief, with geospatial analysis providing insights into areas of dense commuter traffic and patterns.
+
+As a start, we will look at the distribution of passenger trips for different periods in September 2023
+
+```{r}
+# Generate scatter plots for September 2023 bus passenger data
+bus09_scatter <- origind_agg %>%
+  filter(YEAR_MONTH == "2023-09") %>%  # Focus on September 2023
+  ggplot(aes(x = num_trips, y = period, fill = period, color = period)) +  # Set plot aesthetics
+  geom_point(size = 3, alpha = 0.7) +  # Create scatter plot
+  scale_x_continuous(  # Configure x-axis scale
+    labels = scales::number_format(accuracy = 1), 
+    breaks = scales::pretty_breaks(n = 5)) +
+  scale_fill_brewer(palette = "Set2") +  # Use a Brewer color palette
+  labs(
+    title = "September 2023: Peak Passenger Volumes in Weekday Mornings",
+    subtitle = "Variability during weekdays suggests potential congestion") + 
+  theme(
+    axis.title.y = element_blank(),
+    axis.title.x = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.text.x = element_blank()  # Remove x-axis labels for clarity
+  )  # Adjust plot theme for a clean appearance
+
+# Display the plot
+bus09_scatter
+
+
+```
+
+-   Passenger counts are notably higher during peak weekday hours as opposed to weekend or public holiday peaks.
+
+-   Each peak hour time frame exhibits a distribution skewed toward higher values (right), indicating sporadic instances of unusually high passenger numbers.
+
+-   Such patterns may point to congestion at the Central Business District (CBD), bus stops near the highways, where passengers frequent to change buses, or Bus interchanges.
+
+-   Subsequent investigation could ascertain if these occurrences are geographically clustered, helping to identify probable congestion focal points.
+
+**Next we explore if the distribution changes across different months (i.e. August to October 2023)**
+
+```{r}
+# Generate scatter plots for bus passenger data
+origind_scatter <- origind_agg %>%
+  ggplot(aes(x = period, y = num_trips, fill = period, color = period)) +
+  geom_violin(position = position_nudge(x = 0, y = .2), alpha = 0.5) +  # Create violin plots
+  geom_point(aes(y = num_trips, color = period), 
+             position = position_jitter(height = .15), size = .5, alpha = 0.8) +  # Add jittered points
+  facet_wrap(~YEAR_MONTH, nrow = 1) +  # Facet by YEAR_MONTH for comparison
+  scale_y_continuous(labels = scales::number_format(accuracy = 1), 
+                     breaks = scales::pretty_breaks(n = 3)) +  # Adjust y-axis scale
+  labs(title = "Passenger Volume Distribution: Aug - Oct 2023") +  # Add a descriptive title
+  theme(
+    axis.title.y = element_blank(),
+    axis.title.x = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.text.x = element_blank()  # Remove x-axis labels for clarity
+  )  
+
+# Display the plot
+origind_scatter
+```
+
+The scatter plots indicate a consistent trip distribution across three months, suggesting the presence of bus stops with high passenger volumes, particularly during weekday evenings. This consistency hints at potential congestion hot spots, particularly if these stops are clustered. Consequently, focused Geospatial analysis on September 2023 data will be used to identify these areas.
+
+## Spatial Polygon preparation
+
+### 4.1 Month- Data Extraction
+
+extract September 2023 data
+
+```{r}
+# Isolate September 2023 data for focused analysis
+origind09 <- origind_agg %>%
+  filter(YEAR_MONTH == "2023-09") %>%  # Targeting September 2023
+  pivot_wider(  # Transform data to wide format for easier analysis
+    names_from = period,
+    values_from = num_trips
+  ) %>%
+  select(-YEAR_MONTH)  # Exclude YEAR_MONTH column from the final output
+
+# Create a datatable visualization for the transformed data
+DT::datatable(origind09,
+              options = list(pageLength = 5, autoWidth = TRUE),
+              rownames = FALSE)  # Configure table display options
+
+```
+
+### 4.2 Left Join to create dataframe
+
+```{r}
+origind09_sf <- left_join(busstop, origind09, by = "ORIGIN_PT_CODE")
+
+origind09_sf
+```
+
+### **4.3 Creating Hexagon Spatial Grid**
+
+origind09_sf , being a dataframe containing spatial points, isn't ideal for spatial autocorrelation studies that necessitate 'areas' to be depicted as polygons. The code that follows will reorganize these bus stop points into a hexagonal lattice for better spatial analysis.
+
+```{r}
+origind09_hx <- st_make_grid(
+    origind09_sf,
+    cellsize = 500,
+    square = FALSE
+  ) %>%
+  st_sf() %>%
+  rowid_to_column("hex_id")
+```
+
+The code above does the following:
+
+-   The **cellsize** parameter is measured in the same units as the **origind09_sf** dataframe's coordinate system. Since **origind09_sf** uses EPSG:3414 projection, which has units in meters, this **cellsize** defines the hexagon's width, here chosen to be 500 meters.
+
+-   Each hexagon is given a unique **hex_id** as the primary key.
+
+### 4.4 Generate Attribute Dataframe using Hexagon Identifiers
+
+The hexagonal grid is designed to contain multiple bus stops, with each hexagon's **hex_id** acting as the key for compiling data. The following steps detail the process for structuring attributes based on **hex_id**:
+
+-   Apply **st_join()** with the **st_within** join condition to match bus stop points to their respective hexagons.
+
+-   Use **st_set_geometry(NULL)** to remove the spatial aspect, shifting the focus to attribute consolidation.
+
+-   Implement **group_by()** to consolidate data under a distinct **hex_id**.
+
+-   Deploy **summarise()** to tally the number of bus stops and to sum up trips for each peak period by hexagon.
+
+-   Convert any NA entries to 0 with **replace(is.na(.), 0)** to clean the dataset. #This is just a precaution although we already did the checks prior
+
+```{r}
+# Joining bus stops with hexagonal areas and summarizing data
+origind09_stops <- origind09_sf %>%
+  st_join(origind09_hx, join = st_within) %>%  # Associate bus stops with hexagons
+  group_by(hex_id) %>%  # Group by hexagon ID
+  summarise(
+    total_busstops = n(),  # Count bus stops per hexagon
+    busstop_ids = str_c(ORIGIN_PT_CODE, collapse = ", "),  # Combine bus stop codes
+        loc_descriptions = str_c(LOC_DESC, collapse = "; "),  # Combine location descriptions
+    peak_weekday_morning = sum(`Weekday morning peak`),  # Sum for weekday morning peak
+    peak_weekday_evening = sum(`Weekday evening peak`),  # Sum for weekday evening peak
+    peak_weekend_morning = sum(`Weekend/PH morning peak`),  # Sum for weekend morning peak
+    peak_weekend_evening = sum(`Weekend/PH evening peak`)   # Sum for weekend evening peak
+  ) %>%
+  st_set_geometry(NULL) %>%  # Remove spatial component
+  replace_na(list(peak_weekday_morning = 0, peak_weekday_evening = 0,  # Replace NA with 0
+                  peak_weekend_morning = 0, peak_weekend_evening = 0)) %>%
+  ungroup()  # Remove grouping
+
+# Display the processed data
+origind09_stops
+
+```
+
+### 4.5 Create Spatial Polygon dataframe
+
+```{r}
+origind09_hx <- origind09_hx %>%
+  left_join(origind09_stops,
+            by = "hex_id"
+  ) %>%
+  replace(is.na(.), 0)
+
+bus_traffic_09 <- filter(origind09_hx,
+                       total_busstops > 0)
+```
+
+## 5.0 Visualization and Sense Making
+
+This sections aims to conduct visualization and sense making of the current data before embarking on more complex methodologies such as **Local Indicators of Spatial Association (LISA)**
+
+```{r}
+# Switch to tmap interactive viewing mode
+tmap_mode("view")
+
+# Creating an interactive map of bus traffic
+bus_traffic_09_map <- tm_basemap("CartoDB.Positron") +
+  tm_shape(bus_traffic_09) +  # Connecting tm_shape directly to tm_fill
+  tm_fill(
+    col = "total_busstops",  # Color based on the number of bus stops
+    palette = "YlGnBu",  # Using the YlGnBu color palette
+    style = "cont",  # Continuous color style
+    id = "loc_descriptions",  # Identify hexagons by hex_id
+    popup.vars = c("Bus Stops Count" = "total_busstops",
+                   "Stop Codes" = "busstop_ids"),  # Popup information
+    title = "Number of Bus Stops"  # Title for the color legend
+  ) +
+  tm_layout(
+    legend.show = FALSE)  
+
+# Display the interactive map
+bus_traffic_09_map
+
+
+```
+
+The map indicates that the central area, which likely includes the Business Districts, the likes of the Central Business districts or One North Business parks, as well as highly populated residential zones areas like Seng Kang, have a higher concentration of bus stops. These areas are known for their high human traffic which necessitates the need for a more conducive and extensive public transportation network to facilitate the daily travel needs of its patrons. \
+\
+In contrast, the more unvisited areas of the island, such as Lim Chu Kang, an area marked for more agricultural activities, are marked by lighter shades, highlighting a sparser presence of bus stops. \
+These regions, which are less urbanized or more industrialized typically see lower human traffic. \
+\
+The distribution of bus stops in Singapore as seen in the map emulates Singapore's Land Transport Authority (LTA)'s strategic approach to provide an efficient bus serivice, focusing on providing efficient access and use of resources, as well as connectivity, especially in areas with high human traffic where public transport demand is higher.\
+
+###  5.1 Peak Period Analysis
+
+```{r}
+summary(origind09_sf)
+
+```
+
+Reinforcing the statements above, the summary has concluded that the data is indeed right skewed, as such the breaks for the following maps will be adjusted to better illustrate the comparisons between peak hour time frames
+
+```{r}
+peak_weekday_morning_map <- tm_basemap("CartoDB.Positron") +
+  tm_shape(bus_traffic_09) +
+  tm_fill(
+    col = "peak_weekday_morning",
+    palette = "YlGnBu",
+    title = "Peak Weekday Morning Traffic",
+    id = "loc_descriptions",
+    showNA = FALSE,
+    alpha = 0.6,
+    breaks = c(0, 500, 1000, 2000, 3000, 5000, 10000, 50000, 100000, 300000, 550000)
+  ) +
+  tm_borders() +
+  tm_layout(
+    legend.show = TRUE,
+    legend.position = c("right", "top"),
+    legend.width = 0.2,
+    legend.height = 0.5
+  )
+
+peak_weekday_morning_map
+
+
+
+```
+
+```{r}
+peak_weekday_evening_map <- tm_basemap("CartoDB.Positron") +
+  tm_shape(bus_traffic_09) +
+  tm_fill(
+    col = "peak_weekday_evening",
+    palette = "YlOrRd",
+    title = "Peak Weekday Evening Traffic",
+    id = "loc_descriptions",
+    showNA = FALSE,
+    alpha = 0.6,
+    breaks = c(0, 500, 1000, 2000, 3000, 5000, 10000, 50000, 100000, 300000, 550000)
+  ) +
+  tm_borders() +
+  tm_layout(
+    legend.show = TRUE,
+    legend.position = c("right", "top"),
+    legend.width = 0.2,
+    legend.height = 0.5
+  )
+
+peak_weekday_evening_map
+
+
+```
+
+```{r}
+peak_weekend_evening_map <- tm_basemap("CartoDB.Positron") +
+  tm_shape(bus_traffic_09) +  # Added '+' here
+  tm_fill(
+    col = "peak_weekend_evening",
+    palette = "RdPu",
+    title = "Peak Weekend Evening Traffic",
+    id = "loc_descriptions",
+    showNA = FALSE,
+    alpha = 0.6,
+    breaks = c(0, 500, 1000, 2000, 3000, 5000, 10000, 50000, 100000, 300000, 550000)
+  ) +
+  tm_borders() +
+  tm_layout(
+    legend.show = TRUE,
+    legend.position = c("right", "top"),
+    legend.width = 0.2,
+    legend.height = 0.5
+  )
+
+peak_weekend_evening_map
+
+```
+
+```{r}
+# Creating a static map of peak weekend evening bus traffic
+peak_weekend_evening_map <- tm_basemap("CartoDB.Positron") +
+  tm_shape(bus_traffic_09) +
+  tm_fill(
+    col = "peak_weekend_evening",
+    palette = "Blues",
+    title = "Peak Weekend Evening Traffic",
+    id = "loc_descriptions",
+    showNA = FALSE,
+    alpha = 0.6,
+    breaks = c(0, 500, 1000, 2000, 3000, 5000, 10000, 50000, 100000, 300000, 550000)
+  ) +
+  tm_borders() +
+  tm_layout(legend.show = TRUE)
+
+# Display the map
+peak_weekend_evening_map
+
+```
+
+Unsurprisingly, the weekdays' trip volumes surpass that of the weekends/holidays, most plausibly due to the working crowd. Nonetheless, the areas regardless of the peak hour time frames, the areas which see higher human traffic remains unchanged, highlighting the efficacy of the Singapore bus network in serving the needs of the commuters. \
+
+```{r}
+library(ggplot2)
+library(gridExtra)
+
+# Function to create a scatter plot
+create_scatter_plot <- function(data, y_column_name, title, color = "blue") {
+  ggplot(data, aes_string(x = "total_busstops", y = y_column_name)) +
+    geom_point(alpha = 0.7, color = color) +
+    ylim(0, 500000) +
+    scale_y_continuous(breaks = scales::pretty_breaks(n = 6)) +
+    labs(title = title, x = "Number of Bus Stops", y = "") +
+    theme(panel.grid = element_blank())  # Removed axis.text.y = element_blank()
+}
+
+# Creating individual scatter plots
+morning_peak_weekday <- create_scatter_plot(bus_traffic_09, "peak_weekday_morning", "Weekday Morning Peak", "blue")
+evening_peak_weekday <- create_scatter_plot(bus_traffic_09, "peak_weekday_evening", "Weekday Evening Peak", "blue")
+morning_peak_weekend <- create_scatter_plot(bus_traffic_09, "peak_weekend_morning", "Weekend/PH Morning Peak", "green")
+evening_peak_weekend <- create_scatter_plot(bus_traffic_09, "peak_weekend_evening", "Weekend/PH Evening Peak", "green")
+
+# Combining the plots using grid.arrange
+combined_plot <- grid.arrange(morning_peak_weekday, evening_peak_weekday, morning_peak_weekend, evening_peak_weekend, ncol = 2, nrow = 2)
+```
+
+The volume of passenger trips appears to be greatest in regions having 4 to 8 bus stops. Contrarily, areas with the most bus stops, ranging from 9 to 11, did not experience the highest levels of passenger traffic during any peak times. \
+\
+This indicates the possibility of an ideal number of bus stops within each 500m-wide area that could help in alleviating congestion, measures taken could be to look into replanning bus stops placements so as to not have diminishing returns.
+
+## **Local Indicators of Spatial Association**
+
+In preparing for spatial autocorrelation analysis, we first establish a spatial weights matrix to map the interconnections between hexagonal spatial units by their distance. Key to this setup is ensuring that each unit has at least one, but not all, other units as neighbors to reflect diverse spatial relationships accurately.
+
+Given our dataset's skewed distribution, we've chosen to assign 10 neighbors per feature, exceeding the suggested minimum of eight. This approach enhances the robustness of our spatial connectivity analysis.
+
+Our study area, marked by unevenly distributed bus stops and zones with low residential or business density, leads us to prefer distance-based methods over contiguity-based ones. This choice aligns better with our data's spatial characteristics.
+
+We adopt the Adaptive Distance-Based method, with a fixed number of neighbors, to accommodate our dataset's right-skewed distribution. This method ensures each hexagon connects with exactly 10 neighbors. We employ the `st_knn` function to identify neighbors and `st_weights` to create row-standardized spatial weights, setting a solid foundation for our spatial autocorrelation analysis.
+
+### **6.1 Global Spatial Association Globally with Global Moran\'s I**
+
+```{r}
+# Adjusting bus_traffic_09 data with spatial weights
+weightmat_all <- bus_traffic_09 %>%
+  mutate(
+    knn = st_knn(geometry, k = 10),  # Calculating 10 nearest neighbors
+    weight_type = st_weights(knn, style = 'W'),  # Generating weights
+    .before = 1  # Placing the new columns at the beginning
+  )
+
+
+# check the output
+kable(head(weightmat_all))
+```
+
+```{r}
+# Ensure consistent results
+set.seed(5555)
+
+# Assuming 'bus_traffic_09' is a spatial dataset with a 'geometry' column
+# List of columns for peak traffic analysis
+bus_traffic_columns <- c("peak_weekday_morning", "peak_weekday_evening", "peak_weekend_morning", "peak_weekend_evening")
+
+# Function to calculate global Moran's I
+calculate_moran_i <- function(dataset, column_name, neighbors) {
+  # Validate that the dataset is properly structured as a spatial data frame
+  if (!("geometry" %in% names(dataset))) {
+    stop("The dataset does not have a geometry column.")
+  }
+
+  # Validate that the column_name exists in the dataset
+  if (!(column_name %in% names(dataset))) {
+    stop(paste("Column", column_name, "not found in the dataset."))
+  }
+
+  # Establishing spatial relationships
+  neighbors_list <- st_knn(dataset$geometry, k = neighbors)
+  weights <- st_weights(neighbors_list, style = 'W')
+
+  # Executing Moran's I calculation
+  moran_test_result <- global_moran_perm(dataset[[column_name]], neighbors_list, weights, nsim = 99)
+  
+  # Organizing the output
+  output <- list(
+    column = column_name,
+    moran_i = moran_test_result
+  )
+  
+  return(output)
+}
+
+# Running the Moran's I calculation for each traffic time slot
+moran_i_results <- lapply(bus_traffic_columns, function(column) calculate_moran_i(bus_traffic_09, column, 10))
+
+# Displaying the calculated results
+print(moran_i_results)
+```
+
+For each of the four time slots, the p-values associated with the Global Moran\'s I test are less than 0.05, indicating a rejection of the null hypothesis, which suggests randomness in spatial patterns. \
+\
+Additionally, the positive values of the Moran's I statistics imply a tendency towards clustering in the spatial distribution across all time intervals.
+
+### **6.2 LISA assessment** 
+
+Investigating spatial patterns at a detailed level, we utilize the Local Moran\'s I analysis to identify specific areas with strong or weak spatial associations. The methodology categorizes regions based on clustering types like high-high or low-low, revealing areas of similar or contrasting characteristics. We apply the **`local_moran`** function from the sfdep package for examining passenger trips at a hexagonal level, which calculates neighbors and weights automatically and uses simulated data for precision.
+
+```{r}
+# Create a function to perform local Moran's I analysis
+get_lisa <- function(weightmat_all, bus_traffic_column, k) {
+  # Check if the bus_traffic_column is valid
+  if (nchar(bus_traffic_column) == 0) {
+    stop("The column name provided is empty.")
+  }
+
+  # Compute spatial weights
+  nb <- st_knn(weightmat_all$geometry, k = k)
+  wt <- st_weights(nb, style = 'W')
+
+  # Perform local Moran's I analysis and create a new data frame
+  result <- weightmat_all %>% 
+    mutate(
+      local_moran = local_moran(.data[[bus_traffic_column]], nb, wt, nsim = 99),
+      .before = 1
+    ) %>%
+    unnest(local_moran)
+  
+  return(result)
+}
+
+# Assuming bus_traffic_columns is a vector of column names
+bus_traffic_columns <- c("peak_weekday_morning", "peak_weekday_evening", "peak_weekend_morning", "peak_weekend_evening")
+
+# Initialize a list to store results for each bus_traffic_column
+lisa_results <- list()
+
+# Apply the function for each bus traffic time interval and store results in the list
+for (btc in bus_traffic_columns) {
+  lisa_results[[btc]] <- get_lisa(weightmat_all, btc, k = 10)
+  
+  # Remove columns that don't belong to the specific time interval
+  unwanted_columns <- setdiff(bus_traffic_columns, btc)
+  lisa_results[[btc]] <- lisa_results[[btc]][, !(names(lisa_results[[btc]]) %in% unwanted_columns)]
+}
+
+# Show sample output in an interactive table
+datatable(lisa_results[["peak_weekday_morning"]], 
+          class = 'cell-border stripe', 
+          options = list(pageLength = 5))
+```
+
+We now utilize the tmap package to generate choropleth maps that display Local Moran\'s I values and corresponding p-values for four time intervals. The maps will highlight only significant Local Moran\'s I values at a 5% significance level. The existing code is specifically used to extract these key Local Moran\'s I values for map creation.
+
+```{r}
+get_sig_lmi_map <- function(lisa_table, title) {
+  
+  sig_lisa_table <- lisa_table %>%
+    filter(p_ii_sim < 0.05)
+  
+  result <- tm_shape(lisa_table) +
+    tm_polygons() +
+    tm_borders(alpha = 0.5) +
+    tm_shape(sig_lisa_table) +
+    tm_fill("ii", palette = "Reds") + 
+    tm_borders(alpha = 0.4) +
+    tm_layout(
+      main.title = title,
+      main.title.size = 1.3
+    )
+  
+  return(result)
+  
+}
+# Applying the function to create maps for different peak intervals
+
+sig_lmi_1 <- get_sig_lmi_map(lisa_results[["peak_weekday_morning"]], "Weekday Morning" )
+sig_lmi_2 <- get_sig_lmi_map(lisa_results[["peak_weekday_evening"]], "Weekday Afternoon" )
+sig_lmi_3 <- get_sig_lmi_map(lisa_results[["peak_weekend_morning"]], "Weekend Morning" )
+sig_lmi_4 <- get_sig_lmi_map(lisa_results[["peak_weekend_evening"]], "Weekend Afternoon" )
+
+tmap_mode('view')
+
+tmap_arrange(
+  sig_lmi_1,
+  sig_lmi_2,
+  sig_lmi_3,
+  sig_lmi_4,
+  asp = 2,
+  nrow = 2,
+  ncol = 2
+)
+```
+
+Now we zoom into an analysis of which **α = 5%** for Local Indicators of Spatial Association (LISA)
+
+```{r}
+# Function for constructing thematic maps based on significant Local Moran's I data
+generate_thematic_lisa_maps <- function(lisa_data_set, chart_title) {
+  
+  # Filtering for significant Local Moran's I values
+  significant_lisa_data <- lisa_data_set %>%
+    filter(p_ii_sim  < 0.05)
+  
+  # Building the map visualization
+  thematic_map_output <- tm_shape(lisa_data_set) +
+        tm_polygons(alpha = 0.5) +
+        tm_borders(alpha = 0.5) +
+        tm_shape(significant_lisa_data) +
+        tm_fill("median",  
+                id = "loc_desc",  
+                palette = c("deepskyblue", "salmon", "green", "darkred"),
+                alpha = 0.7) +
+        tm_borders(alpha = 0.4) +
+        tm_layout(
+            main.title = chart_title,
+            main.title.size = 1.5,
+            legend.position = c("left", "top")
+        )
+
+    return(thematic_map_output)
+}
+
+# Creating maps for different time intervals
+lisa_map_morning_peak <- generate_thematic_lisa_maps(lisa_results[["peak_weekday_morning"]], "Significant LISA - Weekday Morning")
+lisa_map_evening_peak <- generate_thematic_lisa_maps(lisa_results[["peak_weekday_evening"]], "Significant LISA - Weekday Evening")
+lisa_map_weekend_morning <- generate_thematic_lisa_maps(lisa_results[["peak_weekend_morning"]], "Significant LISA - Weekend Morning")
+lisa_map_weekend_evening <- generate_thematic_lisa_maps(lisa_results[["peak_weekend_evening"]], "Significant LISA - Weekend Evening")
+
+```
+
+```{r}
+tmap_mode('plot')
+lisa_map_morning_peak
+```
+
+```{r}
+tmap_mode('plot')
+lisa_map_evening_peak
+```
+
+```{r}
+tmap_mode('plot')
+lisa_map_weekend_morning
+```
+
+```{r}
+tmap_mode('plot')
+lisa_map_weekend_evening
+```
+
+-   **Deep Sky Blue Areas (Low-Low Clusters)**: These zones are characterized by fewer trips at bus stops, which are also surrounded by other areas with low trip frequencies, forming a cluster of less busy locations.
+
+-   **Green Areas (Low-High Outliers)**: These areas show unique patterns where bus stops have fewer trips in contrast to neighboring areas, indicating isolated spots of lower activity amidst busier surroundings.
+
+-   **Salmon Areas (High-Low Outliers)**: These regions are marked by bus stops with notably higher trip counts than their neighboring areas, highlighting them as exceptional spots of increased activity within less active zones.
+
+-   **Dark Red Areas (High-High Clusters)**: Here, bus stops see a higher volume of trips, and are in proximity to areas with similarly high activity, suggesting a concentration of busy locations.
+
+###  6.3 Findings
+
+#### High-High
+
+1.  **Weekday** **morning** vs **evening**, generally see the high-high clusters in the same areas (Business Districts/ Residential areas, however it is noticed that the clusters generally shrink in size. which could be due to the following reasons:
+
+    1.  **Morning Peak**: Bus use spikes in the morning due to simultaneous commutes to work and schools, creating distinct high-usage clusters.
+
+    2.  **Evening Spread**: Evening could be seeing a staggered exodus from business hubs to varied locations, diffusing the earlier high-usage patterns.
+
+    3.  **Shift in Activities**: Daytime high traffic in business and industrial zones transitions to residential and leisure areas at night, altering usage patterns.1.
+
+    4.  **Varied Destinations**: Evening trips are more dispersed as people head to homes, dining, or leisure spots, reducing reliance on main transit hubs.
+
+    5.  **Diverse Evening Travel**: With more unpredictable routes and choices for non-commuting travel in the evening, the uniform high-usage clusters dissipate.
+
+2.  **Weekend** **mornings** see concentrated bus travel to areas busy with shopping and leisure, forming high-high clusters. By **evening**, these clusters diminish as daytime activities cease and the commuters might have returned home in a staggered fashion outside of the peak hours
+
+#### Low-Low
+
+1.  Bus trips are less frequent in the industrial western sectors of Singapore, indicating lower public transport usage, possibly due to a sparse population or alternative transport options. These patterns showcase the area's distinct travel dynamics.
+
+2.  Comparing the maps for **weekday mornings** and **evenings** or **weekend mornings** and **evenings**, one may notice changes in the size and distribution of low-low clusters. These changes can provide insights into how public transportation demand varies throughout the day and week.
+
+3.  Notably, you can see some areas such as Woodlands Waterfront Park and West Coast park see their Low-Low cluster shrinking during the **weekday evening**
+
+4.  Similar to the weekday, the low low clusters for the **weekend** are typically in the industrial areas in the west for both **morning and evening**
