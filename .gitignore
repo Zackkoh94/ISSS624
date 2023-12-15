@@ -4,3 +4,11 @@
 .httr-oauth
 .DS_Store
 .quarto
+
+
+/Take-home_Ex1/data/aspatial/
+/Take-home_Ex1/data/geospatial/
+/Hands-on_Ex1/data/aspatial/
+/Hands-on_Ex1/data/geospatial/
+/.quarto/
+/In-class_Ex2/data
