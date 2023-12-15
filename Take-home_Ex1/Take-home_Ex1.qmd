@@ -512,14 +512,14 @@ bus_traffic_09_map
 
 ```
 
-The map indicates that the central area, which likely includes the Business Districts, the likes of the Central Business districts or One North Business parks, as well as highly populated residential zones areas like Seng Kang, have a higher concentration of bus stops. These areas are known for their high human traffic which necessitates the need for a more conducive and extensive public transportation network to facilitate the daily travel needs of its patrons. \
+The map indicates that the central area, which likely includes the Business Districts, the likes of the Central Business districts or One North Business parks, as well as highly populated residential zones areas like Seng Kang, have a higher concentration of bus stops. These areas are known for their high human traffic which necessitates the need for a more conducive and extensive public transportation network to facilitate the daily travel needs of its patrons.\
 \
-In contrast, the more unvisited areas of the island, such as Lim Chu Kang, an area marked for more agricultural activities, are marked by lighter shades, highlighting a sparser presence of bus stops. \
-These regions, which are less urbanized or more industrialized typically see lower human traffic. \
+In contrast, the more unvisited areas of the island, such as Lim Chu Kang, an area marked for more agricultural activities, are marked by lighter shades, highlighting a sparser presence of bus stops.\
+These regions, which are less urbanized or more industrialized typically see lower human traffic.\
 \
 The distribution of bus stops in Singapore as seen in the map emulates Singapore's Land Transport Authority (LTA)'s strategic approach to provide an efficient bus serivice, focusing on providing efficient access and use of resources, as well as connectivity, especially in areas with high human traffic where public transport demand is higher.\
 
-###  5.1 Peak Period Analysis
+### 5.1 Peak Period Analysis
 
 ```{r}
 summary(origind09_sf)
@@ -624,7 +624,7 @@ peak_weekend_evening_map
 
 ```
 
-Unsurprisingly, the weekdays' trip volumes surpass that of the weekends/holidays, most plausibly due to the working crowd. Nonetheless, the areas regardless of the peak hour time frames, the areas which see higher human traffic remains unchanged, highlighting the efficacy of the Singapore bus network in serving the needs of the commuters. \
+Unsurprisingly, the weekdays' trip volumes surpass that of the weekends/holidays, most plausibly due to the working crowd. Nonetheless, the areas regardless of the peak hour time frames, the areas which see higher human traffic remains unchanged, highlighting the efficacy of the Singapore bus network in serving the needs of the commuters.\
 
 ```{r}
 library(ggplot2)
@@ -650,7 +650,7 @@ evening_peak_weekend <- create_scatter_plot(bus_traffic_09, "peak_weekend_evenin
 combined_plot <- grid.arrange(morning_peak_weekday, evening_peak_weekday, morning_peak_weekend, evening_peak_weekend, ncol = 2, nrow = 2)
 ```
 
-The volume of passenger trips appears to be greatest in regions having 4 to 8 bus stops. Contrarily, areas with the most bus stops, ranging from 9 to 11, did not experience the highest levels of passenger traffic during any peak times. \
+The volume of passenger trips appears to be greatest in regions having 4 to 8 bus stops. Contrarily, areas with the most bus stops, ranging from 9 to 11, did not experience the highest levels of passenger traffic during any peak times.\
 \
 This indicates the possibility of an ideal number of bus stops within each 500m-wide area that could help in alleviating congestion, measures taken could be to look into replanning bus stops placements so as to not have diminishing returns.
 
@@ -664,7 +664,7 @@ Our study area, marked by unevenly distributed bus stops and zones with low resi
 
 We adopt the Adaptive Distance-Based method, with a fixed number of neighbors, to accommodate our dataset's right-skewed distribution. This method ensures each hexagon connects with exactly 10 neighbors. We employ the `st_knn` function to identify neighbors and `st_weights` to create row-standardized spatial weights, setting a solid foundation for our spatial autocorrelation analysis.
 
-### **6.1 Global Spatial Association Globally with Global Moran\'s I**
+### **6.1 Global Spatial Association Globally with Global Moran's I**
 
 ```{r}
 # Adjusting bus_traffic_09 data with spatial weights
@@ -723,13 +723,13 @@ moran_i_results <- lapply(bus_traffic_columns, function(column) calculate_moran_
 print(moran_i_results)
 ```
 
-For each of the four time slots, the p-values associated with the Global Moran\'s I test are less than 0.05, indicating a rejection of the null hypothesis, which suggests randomness in spatial patterns. \
+For each of the four time slots, the p-values associated with the Global Moran's I test are less than 0.05, indicating a rejection of the null hypothesis, which suggests randomness in spatial patterns.\
 \
 Additionally, the positive values of the Moran's I statistics imply a tendency towards clustering in the spatial distribution across all time intervals.
 
-### **6.2 LISA assessment** 
+### **6.2 LISA assessment**
 
-Investigating spatial patterns at a detailed level, we utilize the Local Moran\'s I analysis to identify specific areas with strong or weak spatial associations. The methodology categorizes regions based on clustering types like high-high or low-low, revealing areas of similar or contrasting characteristics. We apply the **`local_moran`** function from the sfdep package for examining passenger trips at a hexagonal level, which calculates neighbors and weights automatically and uses simulated data for precision.
+Investigating spatial patterns at a detailed level, we utilize the Local Moran's I analysis to identify specific areas with strong or weak spatial associations. The methodology categorizes regions based on clustering types like high-high or low-low, revealing areas of similar or contrasting characteristics. We apply the **`local_moran`** function from the sfdep package for examining passenger trips at a hexagonal level, which calculates neighbors and weights automatically and uses simulated data for precision.
 
 ```{r}
 # Create a function to perform local Moran's I analysis
@@ -775,7 +775,7 @@ datatable(lisa_results[["peak_weekday_morning"]],
           options = list(pageLength = 5))
 ```
 
-We now utilize the tmap package to generate choropleth maps that display Local Moran\'s I values and corresponding p-values for four time intervals. The maps will highlight only significant Local Moran\'s I values at a 5% significance level. The existing code is specifically used to extract these key Local Moran\'s I values for map creation.
+We now utilize the tmap package to generate choropleth maps that display Local Moran's I values and corresponding p-values for four time intervals. The maps will highlight only significant Local Moran's I values at a 5% significance level. The existing code is specifically used to extract these key Local Moran's I values for map creation.
 
 ```{r}
 get_sig_lmi_map <- function(lisa_table, title) {
@@ -882,7 +882,7 @@ lisa_map_weekend_evening
 
 -   **Dark Red Areas (High-High Clusters)**: Here, bus stops see a higher volume of trips, and are in proximity to areas with similarly high activity, suggesting a concentration of busy locations.
 
-###  6.3 Findings
+### 6.3 Findings
 
 #### High-High
 
