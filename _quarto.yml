@@ -1,0 +1,39 @@
+project:
+  type: website
+
+website:
+  title: "ISSS624"
+  navbar:
+    left: 
+      - text: Hands-On Exercise
+        menu: 
+          - text: Hands-On Exercise 1 Geospatial Data Wrangling with R
+            href: Hands-on_Ex1/Hands-on_Ex1_Data_Wrangling_With_R.html
+          - text: Hands-On Exercise 2 
+            #href: Hands-on_Ex2/Hands-on_Ex2.html
+      - text: In-Class Exercise
+        menu:
+          - text: In-Class Exercise 1 
+            href: In-Class_Ex1/In-Class_Ex1.html
+          - text: In-Class Exercise 2 
+            href: In-Class_Ex2/In-Class_Ex2.html
+      - text: Take-Home Exercise
+        menu:
+          - text: Take-Home Exercise 1
+            href: Take-home_Ex1/Take-home_Ex1.html    
+    right:
+      - href: index.qmd
+        text: Home
+      - icon: linkedin
+        href: https://www.linkedin.com/in/zack-koh-86988b138/
+        aria-label: Linkedin
+      - icon: github
+        href: https://github.com/Zackkoh94/ISSS624
+        aria-label: Github
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+
+editor: visual

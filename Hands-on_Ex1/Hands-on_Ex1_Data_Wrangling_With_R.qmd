@@ -1,0 +1,96 @@
+---
+title: "Hands-on Exercise 1: Geospatial Data Wrangling"
+---
+
+## Overview
+
+In this hands-on exercise, the class learnt how to import and wrangle Geospatial data using the appropriate R packages.
+
+## Learning Outcomes:
+
+-   Install and load the **`sf`** and **`tidyverse`** packages in R.
+
+-   Import geospatial and non-geospatial data using appropriate functions.
+
+-   Explore and manipulate data frames using Base R and **`sf`** functions.
+
+-   Assign or transform coordinate systems using **`sf`** functions.
+
+-   Convert data into an **`sf`** data frame using the **`sf`** package.
+
+-   Perform geospatial operations using **`sf`** functions.
+
+-   Conduct data wrangling tasks using the **`dplyr`** package.
+
+-   Perform Exploratory Data Analysis (EDA) using **`ggplot2`** functions."
+
+## Getting started
+
+The code chunk below install and load sf and tidyverse packages into R environment
+
+```{r}
+pacman::p_load(sf, tidyverse)
+```
+
+## Importing Geospatial Data:
+
+### The data used for the exercise are as follow:
+
+-   Master Plan 2014 Subzone Boundary (Web) from [data.gov.sg](https://data.gov.sg/)
+-   Pre-Schools Location from [data.gov.sg](https://data.gov.sg/)
+-   Cycling Path from [LTADataMall](https://www.mytransport.sg/content/mytransport/home/dataMall.html)
+-   Latest version of Singapore Airbnb listing data from [Inside Airbnb](http://insideairbnb.com/get-the-data.html)
+
+### Importing feature data
+
+A utility known as st_read is used in the data import procedure. This function reads many map formats and extensions, including.shp,.dbf,.prj, and.shx. The following parameters are used by the function:
+
+-   The **`dsn`** Parameter, specifies the location of which where we map our files.
+
+-   The **`layer`** parameter in this section emphasizes specific map feature
+
+-   Lastly, we note that extensions such as **`.shp`**, **`.dbf`**, **`.prj`** and **`.shx`** are not necessary.
+
+::: panel-tabset
+### Importing polygon feature data
+
+```{r}
+mpsz = st_read(dsn = "data/geospatial",layer = "MP14_SUBZONE_WEB_PL")
+```
+
+::: {.notebox .goldensnitch data-latex="goldensnitch"}
+Shapefiles are a common format for storing geospatial vector data, representing various geographic features like points, lines, and polygons. The "MP14_SUBZONE_WEB_PL" refers to a specific layer within a shapefile which contains polygon features. These polygons may represent subzones within a geographic region, such as those outlined in the Master Plan 2014 Subzone Boundary (Web) data.
+
+The dataset serves as a forward-looking plan for Singapore's development over the next 10 to 15 years, known as the Development Master Plan 2014. Subzones typically revolve around key focal points, like neighborhood centers or activity nodes, and a Planning Area can consist of more than 10 subzones. The data is sourced from the Singapore Government.
+:::
+
+### Importing Polylines feature data
+
+```{r}
+cyclingpath <- st_read(dsn = "/Zackkoh94/ISSS624/Hands-on_Ex1/data/geospatial", layer = "CyclingPathGazette")
+```
+
+::: {.notebox .goldensnitch data-latex="goldensnitch"}
+This code imports data representing polylines from a shapefile. Polylines are used to depict linear features like roads, rivers, or cycling paths, consisting of connected straight lines. In this instance, the data represents a cycling path within Singapore, excluding park connectors. The source of this data is the Land Transport Authority.
+:::
+
+### Importing GIS feature data
+
+```{r}
+preschool <- st_read(dsn = "/Zackkoh94/ISSS624/Hands-on_Ex1/data/geospatial/PreSchoolsLocation.kml")
+```
+
+::: {.notebox .goldensnitch data-latex="goldensnitch"}
+This code imports geospatial data in KML format, which is commonly used for annotating and visualizing geographic information on maps and Earth browsers. Specifically, it imports data about the locations of pre-schools in Singapore from a KML file. The source of this data is the Singapore Government.
+:::
+:::
+
+## Checking the Content of A Simple Feature Data Frame
+
+The following codes are for retrieve information related to the content of a simple feature data frame:
+
+### Working with *st_geometry()*
+
+```{r}
+st_geometry(mpsz)
+```
