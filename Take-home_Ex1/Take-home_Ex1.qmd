@@ -887,7 +887,7 @@ lisa_map_weekend_evening
 
 #### High-High
 
-1.  **Weekday** **morning** vs **evening**, generally see the high-high clusters in the same areas (Business Districts/ Residential areas, however it is noticed that the clusters generally shrink in size. which could be due to the following reasons:
+1.  **Weekday** **morning** vs **evening**, generally see the high-high clusters in the same areas (Business Districts/ Residential areas, however it is noticed that the clusters generally shrink in size when compared from **morning** to **evening**. which could be due to the following reasons:
 
     1.  **Morning Peak**: Bus use spikes in the morning due to simultaneous commutes to work and schools, creating distinct high-usage clusters.
 

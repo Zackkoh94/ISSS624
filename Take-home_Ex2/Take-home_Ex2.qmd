@@ -91,8 +91,22 @@ The R packages used for the analysis are as follows:
 -   [**performance**](https://easystats.github.io/performance/)**:** for computing measures to assess model quality, which are not directly provided by R's 'base' or 'stats' packages. The primary goal of the **performance** package is to provide utilities for computing indices of model quality and goodness of fit. These include measures like r-squared (R2), root mean squared error (RMSE)
 
     ```{r}
-    pacman::p_load(sf, sfdep, tmap, tidyverse, plotly, zoo, Kendall, kableExtra, ggrain, DT, ggplot2, gridExtra,stplanr, performance)
+    pacman::p_load(sf, sfdep, tmap, tidyverse, plotly, zoo, Kendall, kableExtra, ggrain, DT, ggplot2, gridExtra,stplanr, performance, dplyr)
     ```
+
+# Data Description
+
+### **Open Government Data**
+
+For the purpose of this assignment, data from several open government sources will be used:
+
+-   *Passenger Volume by Origin Destination Bus Stops*, *Bus Stop Location* from [LTA DataMall](https://datamall.lta.gov.sg/content/datamall/en.html).
+
+-   *Master Plan 2019 Subzone Boundary*, *HDB Property Information*, *School Directory and Information* and other relevant data from [Data.gov.sg](https://beta.data.gov.sg/).
+
+### **Specially collected data**
+
+-   Geospatial data for Businesses, retail and services, leisure and recreation, etc provided by course instructor, Professor Kam Tin Seong.
 
 # Data Imports
 
@@ -125,7 +139,163 @@ head(bus09,10) %>%
 
 -   **ORIGIN_PT_CODE**: Identifier for the bus stop where the trip originated.
 
+```{=html}
+<!-- -->
+```
 -   **DESTINATION_PT_CODE**: Identifier for the bus stop where the trip ended.
 
 -   **TOTAL_TRIPS**: Total number of trips recorded for each origin-destination pair.
 :::
+
+```{r}
+glimpse(bus09)
+```
+
+### Data preparation 
+
+```{r}
+bus09 <- bus09 %>%
+  mutate(
+    ORIGIN_PT_CODE = as.factor(ORIGIN_PT_CODE),
+    DESTINATION_PT_CODE = as.factor(DESTINATION_PT_CODE)
+  )
+```
+
+As mentioned before, ORIGIN_PT_CODE and DESTINATION_PT_CODE's data type are in character format. Because they represent busstop locations, they should be transformed into factors (categorical data type) for further analysis.
+
+### Data Hygiene
+
+```{r}
+count_duplicate_rows <- function(df, df_name) {
+  df %>%     
+    group_by_all() %>%     
+    filter(n() > 1) %>%     
+    ungroup() %>%     
+    summarise(df_name = df_name, row_count = n()) }  
+bus09_dupes  <- count_duplicate_rows(bus09, "bus09")
+print(bus09_dupes)
+```
+
+```{r}
+count_null_rows <- function(df, df_name) {
+  df %>%
+    filter(if_any(everything(), is.na)) %>%
+    summarise(df_name = df_name, row_count = n())
+}
+
+bus09_nulls <- count_null_rows(bus09, "bus09")
+
+print(bus09_nulls)
+```
+
+There are no nulls or duplicates in the data, it shows good hygiene
+
+### Data Filtration 
+
+Following the findings from Take-home_Ex1 as well, we concur that the **Weekday Morning peak period** **(6am-9am)** is the peak period that sees the most High-High following the LISA analysis, hence will be made the target for the purpose of our task. This is done in the code block below.
+
+```{r}
+get_origin_dest <- function(data, daytype, timeinterval) {
+  result <- data %>%
+    filter(DAY_TYPE == daytype) %>%
+    filter(TIME_PER_HOUR >= timeinterval[1] & TIME_PER_HOUR <= timeinterval[2]) %>%
+    group_by(ORIGIN_PT_CODE, DESTINATION_PT_CODE) %>%
+    summarise(TRIPS = sum(TOTAL_TRIPS)) %>%
+    ungroup() # Ungroup for further operations if needed
+
+  return(result)
+}
+
+# Get the data for 'WEEKDAY' between 6am and 8am
+wd_morning <- get_origin_dest(bus09, 'WEEKDAY', c(6, 8))
+
+```
+
+```{r}
+head(wd_morning,10) %>%
+  kbl() %>%
+  kable_styling(
+    full_width = F, 
+    bootstrap_options = c("condensed", "responsive"))
+```
+
+## Geospatial Data
+
+Like in Take-home_Ex1, we'll be loading the Bus Stop Location shapefiles into R, resulting in an **`sf`** point object that contains 5161 points and 3 fields. Initially in the WSG84 geographical coordinate system, this data will be transformed to the EPSG 3414 projected coordinate system, which is specific to Singapore.\
+
+```{r}
+busstop <- st_read(dsn="data/geospatial", layer = "BusStop") %>% 
+  st_transform(crs = 3414)
+```
+
+```{r}
+busstop
+```
+
+### Data Hygiene
+
+```{r}
+count_null_rows <- function(df, df_name, columns) {
+  # Temporarily drop the geometry column
+  df_no_geom <- df %>% 
+    st_set_geometry(NULL) %>%
+    select(all_of(columns))
+
+  # Counting null rows
+  null_counts <- df_no_geom %>%
+    filter(if_any(everything(), is.na)) %>%
+    summarise(df_name = df_name, row_count = n())
+
+  return(null_counts)
+}
+
+# Apply function to 'busstop' dataframe for 'BUS_STOP_N' column
+busstop_nulls <- count_null_rows(busstop, "busstop", c("BUS_STOP_N"))
+
+print(busstop_nulls)
+
+
+```
+
+```{r}
+busstop %>% 
+  st_drop_geometry() %>% 
+  group_by(BUS_STOP_N) %>%
+  filter(n()>1) %>%
+  ungroup() %>% 
+  arrange(BUS_STOP_N)
+```
+
+There are no nulls in the BUS_STOP_N column, indicating that the primary key of the data at the very least is sound. \
+\
+Next we look at duplicates, it can be seen that there are indeed duplicates in the Geospatial data set. Upon investigation we can see for each corresponding **`BUS_STOP_N`,** the **`LOC_DESC`** column is mostly duplicated, which could be a result of temporary bus stops or bus stop reconstruction which results in a shift to a location in the vicinity of the original bus stop. \
+This however is not the case for **`BUS_STOP_N` 47201** which sees the **`LOC_DESC`** possessing a NA value, as well as **52059**, **77329** which sees that the **`LOC_DESC`** indicating a different bus stop for their duplicated **`BUS_STOP_N`**. \
+We then look to [Transitlink's](https://www.transitlink.com.sg/eservice/eguide/bscode_idx.php?bs_code=52059) website to verify the information of the identified **`BUS_STOP_N`** and will process the duplicates in the code blocks below
+
+```{r}
+# Overwrite the busstop dataframe with the filtered results
+busstop <- busstop %>%
+  filter(
+    !(BUS_STOP_N == '47201' & is.na(LOC_DESC)) & 
+    !(BUS_STOP_N == '52059' & LOC_DESC == 'OPP BLK 65') & 
+    !(BUS_STOP_N == '77329' & LOC_DESC == 'Pasir Ris Central')
+  )
+```
+
+```{r}
+busstop <- busstop %>%
+  filter(!duplicated(BUS_STOP_N))
+```
+
+```{r}
+busstop %>% 
+  st_drop_geometry() %>% 
+  group_by(BUS_STOP_N) %>%
+  filter(n()>1) %>%
+  ungroup() %>% 
+  arrange(BUS_STOP_N)
+```
+
+We have processed the anomalies and dropped the duplicated as per the code output above.
+
+## Multipolygon 

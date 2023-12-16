@@ -152,6 +152,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <a class="dropdown-item" href="../Take-home_Ex1/Take-home_Ex1.html" rel="" target="">
  <span class="dropdown-text">Take-Home Exercise 1</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="../Take-home_Ex1/Take-home_Ex2.html" rel="" target="">
+ <span class="dropdown-text">Take-Home Exercise 2</span></a>
+  </li>  
     </ul>
   </li>
 </ul>
@@ -456,12 +460,33 @@ Variables Description
 <li><p><strong>TIME_PER_HOUR</strong>: Hour of the day in 24 hour format.</p></li>
 <li><p><strong>PT_TYPE</strong>: Type of public transportation.</p></li>
 <li><p><strong>ORIGIN_PT_CODE</strong>: Identifier for the bus stop where the trip originated.</p></li>
+</ul>
+<!-- -->
+<ul>
 <li><p><strong>DESTINATION_PT_CODE</strong>: Identifier for the bus stop where the trip ended.</p></li>
 <li><p><strong>TOTAL_TRIPS</strong>: Total number of trips recorded for each origin-destination pair.</p></li>
 </ul>
 </div>
 </div>
 </div>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(bus09)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 5,714,196
+Columns: 7
+$ YEAR_MONTH          &lt;chr&gt; "2023-09", "2023-09", "2023-09", "2023-09", "2023-…
+$ DAY_TYPE            &lt;chr&gt; "WEEKENDS/HOLIDAY", "WEEKENDS/HOLIDAY", "WEEKDAY",…
+$ TIME_PER_HOUR       &lt;dbl&gt; 17, 10, 10, 7, 7, 11, 16, 16, 16, 20, 7, 11, 11, 1…
+$ PT_TYPE             &lt;chr&gt; "BUS", "BUS", "BUS", "BUS", "BUS", "BUS", "BUS", "…
+$ ORIGIN_PT_CODE      &lt;chr&gt; "24499", "65239", "65239", "23519", "23519", "5250…
+$ DESTINATION_PT_CODE &lt;chr&gt; "22221", "65159", "65159", "23311", "23311", "4204…
+$ TOTAL_TRIPS         &lt;dbl&gt; 1, 9, 2, 6, 1, 2, 18, 3, 2, 1, 2, 5, 3, 5, 5, 19, …</code></pre>
+</div>
+</div>
+<p>Following the findings from Take-home_Ex1 as well, we concur that the Weekday Morning peak `</p>
 
 
 </section>

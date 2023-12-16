@@ -1,0 +1,207 @@
+---
+title: "Take-home_Ex2"
+editor: visual
+format: 
+  html:
+    code-fold: true
+    code-summary: "code chunk"
+    fontsize: 18px
+    number-sections: true
+    number-depth: 2
+execute:
+  echo: true # all code chunk will appear
+  eval: true # all code chunk will running live (be evaluated)
+  warning: false # don't display warning
+  message: false
+---
+
+
+# Background
+
+Transport operators and urban managers face challenges in addressing urban mobility questions. Traditionally, commuter surveys have been employed, but they are expensive, time-consuming, and labor-intensive. Often, by the time these surveys are processed, the data is outdated.
+
+With the digitization of urban infrastructure, including public buses, mass transit, and other utilities, a wealth of real-time data is now available. Technologies like GPS in vehicles and smart cards for commuters contribute to this data pool, allowing for the tracking of movement patterns in space and time.
+
+However, the rapid accumulation of geospatial data has exceeded planners' capacity to effectively process and convert it into actionable insights, negatively affecting the return on investment in data collection and management.
+
+# Objective
+
+The objective is to illustrate the practical application of Geospatial Data Science and Analysis (GDSA) in decision-making processes. The task utilizes GDSA techniques to integrate and analyze data from various public sources, and then build spatial interaction models to uncover factors influencing urban mobility patterns, especially in public bus transit.
+
+# Project Goal
+
+### **Geospatial Data Science**
+
+-   Derive an analytical hexagon data of 375m (this distance is the perpendicular distance between the centre of the hexagon and its edges) to represent the [traffic analysis zone (TAZ)](https://tmg.utoronto.ca/files/Reports/Traffic-Zone-Guidance_March-2021_Final.pdf).
+
+-   With reference to the time intervals provided in the table below, construct an O-D matrix of commuter flows for a time interval of your choice by integrating *Passenger Volume by Origin Destination Bus Stops* and *Bus Stop Location* from [LTA DataMall](https://datamall.lta.gov.sg/content/datamall/en.html). The O-D matrix must be aggregated at the analytics hexagon level
+
+    | Peak hour period             | Bus tap on time |
+    |------------------------------|-----------------|
+    | Weekday morning peak         | 6am to 9am      |
+    | Weekday afternoon peak       | 5pm to 8pm      |
+    | Weekend/holiday morning peak | 11am to 2pm     |
+    | Weekend/holiday evening peak | 4pm to 7pm      |
+
+-   Display the O-D flows of the passenger trips by using appropriate geovisualisation methods (not more than 5 maps).
+
+-   Describe the spatial patterns revealed by the geovisualisation (not more than 100 words per visual).
+
+-   Assemble at least three propulsive and three attractiveness variables by using aspatial and geospatial from publicly available sources.
+
+-   Compute a distance matrix by using the analytical hexagon data derived earlier.
+
+### **Spatial Interaction Modelling**
+
+-   Calibrate spatial interactive models to determine factors affecting urban commuting flows at the selected time interval.
+
+-   Present the modelling results by using appropriate geovisualisation and graphical visualisation methods. (Not more than 5 visuals)
+
+-   With reference to the Spatial Interaction Model output tables, maps and data visualisation prepared, describe the modelling results. (not more than 100 words per visual).
+
+# Package Imports
+
+The R packages used for the analysis are as follows:
+
+-   sf: Analyzes and models spatial dependencies in data.
+
+-   [**sfdep**](https://sfdep.josiahparry.com/): package which builds upon `spdep` package (compute spatial weights matrix and spatially lagged variable for instance..)
+
+-   **tmap**: Creates thematic maps for visualizing geospatial data.
+
+-   **tidyverse**: A collection of R packages with a unified approach for data manipulation and visualization.
+
+-   **plotly**: Enables interactive and dynamic data visualizations.
+
+-   **zoo**: Handles and analyzes time series data.
+
+-   **Kendall**: Computes Kendall's tau rank correlation coefficient for assessing rank-based associations.
+
+-   **kableExtra:** Enhances 'knitr' package's 'kable()' function for styling HTML and LaTeX tables in R Markdown. It offers advanced formatting options like row/column customization, conditional styling, and captioning, elevating tables to publication quality.
+
+-   **ggrain:** R-package that allows you to create Raincloud plots - following the 'Grammar of Graphics' (i.e., ggplot2)
+
+-   [**DT**](https://rstudio.github.io/DT/)**:** Create interactive html tables
+
+-   **ggplot2:** R package for creating complex and aesthetically pleasing data visualizations using a grammar of graphics.
+
+-   **gridExtra:** R package that provides functions for arranging multiple grid-based plots on a page, enhancing layout flexibility.
+
+-   [**stplanr**](https://docs.ropensci.org/stplanr/)**:** is designed for addressing typical challenges in transport planning and modeling, such as determining the optimal route from point A to point B.
+
+-   [**performance**](https://easystats.github.io/performance/)**:** for computing measures to assess model quality, which are not directly provided by R's 'base' or 'stats' packages. The primary goal of the **performance** package is to provide utilities for computing indices of model quality and goodness of fit. These include measures like r-squared (R2), root mean squared error (RMSE)
+
+
+    ```{r}
+    pacman::p_load(sf, sfdep, tmap, tidyverse, plotly, zoo, Kendall, kableExtra, ggrain, DT, ggplot2, gridExtra,stplanr, performance)
+    ```
+
+
+# Data Imports
+
+As shown in Take-home_Ex1, we have explored that the bus data from August to October has a similar distribution throughout, hence for the purpose of this study, we will be using data from the month of September.
+
+## Aspatial Data
+
+Load the dataset 'Passenger Volume by Origin Destination Bus Stops' obtained from LTA Datamall into your environment using the `read_csv()` function from the `readr` package.
+
+
+```{r}
+bus09 <- read_csv("data/aspatial/origin_destination_bus_202309.csv")
+```
+
+```{r}
+head(bus09,10) %>%
+  kbl() %>%
+  kable_styling(
+    full_width = F, 
+    bootstrap_options = c("condensed", "responsive"))
+```
+
+
+::: {.callout-note collapse="true" title="Variables Description"}
+-   **YEAR_MONTH**: Data collection month in the format of YYYY-MM.
+
+-   **DAY_TYPE**: Weekday or Weekends/Holiday.
+
+-   **TIME_PER_HOUR**: Hour of the day in 24 hour format.
+
+-   **PT_TYPE**: Type of public transportation.
+
+-   **ORIGIN_PT_CODE**: Identifier for the bus stop where the trip originated.
+
+
+```{=html}
+<!-- -->
+```
+
+-   **DESTINATION_PT_CODE**: Identifier for the bus stop where the trip ended.
+
+-   **TOTAL_TRIPS**: Total number of trips recorded for each origin-destination pair.
+:::
+
+
+```{r}
+glimpse(bus09)
+```
+
+
+### Data preparation 
+
+
+```{r}
+bus09 <- bus09 %>%
+  mutate(
+    ORIGIN_PT_CODE = as.factor(ORIGIN_PT_CODE),
+    DESTINATION_PT_CODE = as.factor(DESTINATION_PT_CODE)
+  )
+```
+
+
+As mentioned before, ORIGIN_PT_CODE and DESTINATION_PT_CODE's data type are in character format. Because they represent busstop locations, they should be transformed into factors (categorical data type) for further analysis.
+
+### Data filtration 
+
+Following the findings from Take-home_Ex1 as well, we concur that the **Weekday Morning peak period** **(6am-9am)** is the peak period that sees the most High-High following the LISA analysis, hence will be made the target for the purpose of our task. This is done in the code block below.
+
+
+```{r}
+get_origin_dest <- function(data, daytype, timeinterval) {
+  result <- data %>%
+    filter(DAY_TYPE == daytype) %>%
+    filter(TIME_PER_HOUR >= timeinterval[1] & TIME_PER_HOUR <= timeinterval[2]) %>%
+    group_by(ORIGIN_PT_CODE, DESTINATION_PT_CODE) %>%
+    summarise(TRIPS = sum(TOTAL_TRIPS)) %>%
+    ungroup() # Ungroup for further operations if needed
+
+  return(result)
+}
+
+# Get the data for 'WEEKDAY' between 6am and 8am
+wd_morning <- get_origin_dest(bus09, 'WEEKDAY', c(6, 8))
+
+```
+
+```{r}
+head(wd_morning,10) %>%
+  kbl() %>%
+  kable_styling(
+    full_width = F, 
+    bootstrap_options = c("condensed", "responsive"))
+```
+
+
+Geospatial Data
+
+Like in Take-home_Ex1, we'll be loading the Bus Stop Location shapefiles into R, resulting in an **`sf`** point object that contains 5161 points and 3 fields. Initially in the WSG84 geographical coordinate system, this data will be transformed to the EPSG 3414 projected coordinate system, which is specific to Singapore.\
+
+
+```{r}
+busstop <- st_read(dsn="data/geospatial", layer = "BusStop") %>% 
+  st_transform(crs = 3414)
+```
+
+```{r}
+busstop
+```
+
