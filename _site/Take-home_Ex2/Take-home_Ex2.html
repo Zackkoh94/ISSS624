@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -59,6 +93,9 @@ ul.task-list li input[type="checkbox"] {
     "search-label": "Search"
   }
 }</script>
+
+<script src="../site_libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="../site_libs/lightable-0.0.1/lightable.css" rel="stylesheet">
 
 
 <link rel="stylesheet" href="../styles.css">
@@ -101,7 +138,7 @@ ul.task-list li input[type="checkbox"] {
         <li class="dropdown-header">In-Class Exercise 1</li>
         <li class="dropdown-header">In-Class Exercise 2</li>
         <li>
-    <a class="dropdown-item" href="../In-Class_Ex5/In-Class_Ex5.html" rel="" target="">
+    <a class="dropdown-item" href="../In-Class_Ex5/In-Class_Ex.html" rel="" target="">
  <span class="dropdown-text">In-Class Exercise 5</span></a>
   </li>  
     </ul>
@@ -151,6 +188,16 @@ ul.task-list li input[type="checkbox"] {
   <ul>
   <li><a href="#background" id="toc-background" class="nav-link active" data-scroll-target="#background"><span class="header-section-number">1</span> Background</a></li>
   <li><a href="#objective" id="toc-objective" class="nav-link" data-scroll-target="#objective"><span class="header-section-number">2</span> Objective</a></li>
+  <li><a href="#project-goal" id="toc-project-goal" class="nav-link" data-scroll-target="#project-goal"><span class="header-section-number">3</span> Project Goal</a>
+  <ul class="collapse">
+  <li><a href="#geospatial-data-science" id="toc-geospatial-data-science" class="nav-link" data-scroll-target="#geospatial-data-science"><strong>Geospatial Data Science</strong></a></li>
+  <li><a href="#spatial-interaction-modelling" id="toc-spatial-interaction-modelling" class="nav-link" data-scroll-target="#spatial-interaction-modelling"><strong>Spatial Interaction Modelling</strong></a></li>
+  </ul></li>
+  <li><a href="#package-imports" id="toc-package-imports" class="nav-link" data-scroll-target="#package-imports"><span class="header-section-number">4</span> Package Imports</a></li>
+  <li><a href="#data-imports" id="toc-data-imports" class="nav-link" data-scroll-target="#data-imports"><span class="header-section-number">5</span> Data Imports</a>
+  <ul class="collapse">
+  <li><a href="#aspatial-data" id="toc-aspatial-data" class="nav-link" data-scroll-target="#aspatial-data"><span class="header-section-number">5.1</span> Aspatial Data</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -183,8 +230,241 @@ ul.task-list li input[type="checkbox"] {
 <section id="objective" class="level1" data-number="2">
 <h1 data-number="2"><span class="header-section-number">2</span> Objective</h1>
 <p>The objective is to illustrate the practical application of Geospatial Data Science and Analysis (GDSA) in decision-making processes. The task utilizes GDSA techniques to integrate and analyze data from various public sources, and then build spatial interaction models to uncover factors influencing urban mobility patterns, especially in public bus transit.</p>
+</section>
+<section id="project-goal" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Project Goal</h1>
+<section id="geospatial-data-science" class="level3">
+<h3 class="anchored" data-anchor-id="geospatial-data-science"><strong>Geospatial Data Science</strong></h3>
+<ul>
+<li><p>Derive an analytical hexagon data of 375m (this distance is the perpendicular distance between the centre of the hexagon and its edges) to represent the <a href="https://tmg.utoronto.ca/files/Reports/Traffic-Zone-Guidance_March-2021_Final.pdf">traffic analysis zone (TAZ)</a>.</p></li>
+<li><p>With reference to the time intervals provided in the table below, construct an O-D matrix of commuter flows for a time interval of your choice by integrating <em>Passenger Volume by Origin Destination Bus Stops</em> and <em>Bus Stop Location</em> from <a href="https://datamall.lta.gov.sg/content/datamall/en.html">LTA DataMall</a>. The O-D matrix must be aggregated at the analytics hexagon level</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Peak hour period</th>
+<th>Bus tap on time</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Weekday morning peak</td>
+<td>6am to 9am</td>
+</tr>
+<tr class="even">
+<td>Weekday afternoon peak</td>
+<td>5pm to 8pm</td>
+</tr>
+<tr class="odd">
+<td>Weekend/holiday morning peak</td>
+<td>11am to 2pm</td>
+</tr>
+<tr class="even">
+<td>Weekend/holiday evening peak</td>
+<td>4pm to 7pm</td>
+</tr>
+</tbody>
+</table></li>
+<li><p>Display the O-D flows of the passenger trips by using appropriate geovisualisation methods (not more than 5 maps).</p></li>
+<li><p>Describe the spatial patterns revealed by the geovisualisation (not more than 100 words per visual).</p></li>
+<li><p>Assemble at least three propulsive and three attractiveness variables by using aspatial and geospatial from publicly available sources.</p></li>
+<li><p>Compute a distance matrix by using the analytical hexagon data derived earlier.</p></li>
+</ul>
+</section>
+<section id="spatial-interaction-modelling" class="level3">
+<h3 class="anchored" data-anchor-id="spatial-interaction-modelling"><strong>Spatial Interaction Modelling</strong></h3>
+<ul>
+<li><p>Calibrate spatial interactive models to determine factors affecting urban commuting flows at the selected time interval.</p></li>
+<li><p>Present the modelling results by using appropriate geovisualisation and graphical visualisation methods. (Not more than 5 visuals)</p></li>
+<li><p>With reference to the Spatial Interaction Model output tables, maps and data visualisation prepared, describe the modelling results. (not more than 100 words per visual).</p></li>
+</ul>
+</section>
+</section>
+<section id="package-imports" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Package Imports</h1>
+<p>The R packages used for the analysis are as follows:</p>
+<ul>
+<li><p>sf: Analyzes and models spatial dependencies in data.</p></li>
+<li><p><a href="https://sfdep.josiahparry.com/"><strong>sfdep</strong></a>: package which builds upon <code>spdep</code> package (compute spatial weights matrix and spatially lagged variable for instance..)</p></li>
+<li><p><strong>tmap</strong>: Creates thematic maps for visualizing geospatial data.</p></li>
+<li><p><strong>tidyverse</strong>: A collection of R packages with a unified approach for data manipulation and visualization.</p></li>
+<li><p><strong>plotly</strong>: Enables interactive and dynamic data visualizations.</p></li>
+<li><p><strong>zoo</strong>: Handles and analyzes time series data.</p></li>
+<li><p><strong>Kendall</strong>: Computes Kendall’s tau rank correlation coefficient for assessing rank-based associations.</p></li>
+<li><p><strong>kableExtra:</strong> Enhances ‘knitr’ package’s ‘kable()’ function for styling HTML and LaTeX tables in R Markdown. It offers advanced formatting options like row/column customization, conditional styling, and captioning, elevating tables to publication quality.</p></li>
+<li><p><strong>ggrain:</strong> R-package that allows you to create Raincloud plots - following the ‘Grammar of Graphics’ (i.e., ggplot2)</p></li>
+<li><p><a href="https://rstudio.github.io/DT/"><strong>DT</strong></a><strong>:</strong> Create interactive html tables</p></li>
+<li><p><strong>ggplot2:</strong> R package for creating complex and aesthetically pleasing data visualizations using a grammar of graphics.</p></li>
+<li><p><strong>gridExtra:</strong> R package that provides functions for arranging multiple grid-based plots on a page, enhancing layout flexibility.</p></li>
+<li><p><a href="https://docs.ropensci.org/stplanr/"><strong>stplanr</strong></a><strong>:</strong> is designed for addressing typical challenges in transport planning and modeling, such as determining the optimal route from point A to point B.</p></li>
+<li><p><a href="https://easystats.github.io/performance/"><strong>performance</strong></a><strong>:</strong> for computing measures to assess model quality, which are not directly provided by R’s ‘base’ or ‘stats’ packages. The primary goal of the <strong>performance</strong> package is to provide utilities for computing indices of model quality and goodness of fit. These include measures like r-squared (R2), root mean squared error (RMSE)</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(sf, sfdep, tmap, tidyverse, plotly, zoo, Kendall, kableExtra, ggrain, DT, ggplot2, gridExtra,stplanr, performance)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div></li>
+</ul>
+</section>
+<section id="data-imports" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Data Imports</h1>
+<p>As shown in Take-home_Ex1, we have explored that the bus data from August to October has a similar distribution throughout, hence for the purpose of this study, we will be using data from the month of September.</p>
+<section id="aspatial-data" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="aspatial-data"><span class="header-section-number">5.1</span> Aspatial Data</h2>
+<p>Load the dataset ‘Passenger Volume by Origin Destination Bus Stops’ obtained from LTA Datamall into your environment using the <code>read_csv()</code> function from the <code>readr</code> package.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>bus09 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/aspatial/origin_destination_bus_202309.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(bus09,<span class="dv">10</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kbl</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_styling</span>(</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">full_width =</span> F, </span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">bootstrap_options =</span> <span class="fu">c</span>(<span class="st">"condensed"</span>, <span class="st">"responsive"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="table-responsive">
+<table class="table table-condensed table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">YEAR_MONTH</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">DAY_TYPE</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">TIME_PER_HOUR</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">PT_TYPE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">ORIGIN_PT_CODE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">DESTINATION_PT_CODE</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">TOTAL_TRIPS</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">2023-09</td>
+<td style="text-align: left;">WEEKENDS/HOLIDAY</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: left;">BUS</td>
+<td style="text-align: left;">24499</td>
+<td style="text-align: left;">22221</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2023-09</td>
+<td style="text-align: left;">WEEKENDS/HOLIDAY</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">BUS</td>
+<td style="text-align: left;">65239</td>
+<td style="text-align: left;">65159</td>
+<td style="text-align: right;">9</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2023-09</td>
+<td style="text-align: left;">WEEKDAY</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">BUS</td>
+<td style="text-align: left;">65239</td>
+<td style="text-align: left;">65159</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2023-09</td>
+<td style="text-align: left;">WEEKDAY</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: left;">BUS</td>
+<td style="text-align: left;">23519</td>
+<td style="text-align: left;">23311</td>
+<td style="text-align: right;">6</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2023-09</td>
+<td style="text-align: left;">WEEKENDS/HOLIDAY</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: left;">BUS</td>
+<td style="text-align: left;">23519</td>
+<td style="text-align: left;">23311</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2023-09</td>
+<td style="text-align: left;">WEEKENDS/HOLIDAY</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: left;">BUS</td>
+<td style="text-align: left;">52509</td>
+<td style="text-align: left;">42041</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2023-09</td>
+<td style="text-align: left;">WEEKDAY</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: left;">BUS</td>
+<td style="text-align: left;">03151</td>
+<td style="text-align: left;">11161</td>
+<td style="text-align: right;">18</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2023-09</td>
+<td style="text-align: left;">WEEKDAY</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: left;">BUS</td>
+<td style="text-align: left;">54349</td>
+<td style="text-align: left;">53241</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2023-09</td>
+<td style="text-align: left;">WEEKENDS/HOLIDAY</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: left;">BUS</td>
+<td style="text-align: left;">54349</td>
+<td style="text-align: left;">53241</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2023-09</td>
+<td style="text-align: left;">WEEKENDS/HOLIDAY</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: left;">BUS</td>
+<td style="text-align: left;">43371</td>
+<td style="text-align: left;">14139</td>
+<td style="text-align: right;">1</td>
+</tr>
+</tbody>
+</table>
+</div>
 
 
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled" title="Variables Description">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Variables Description
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ul>
+<li><p><strong>YEAR_MONTH</strong>: Data collection month in the format of YYYY-MM.</p></li>
+<li><p><strong>DAY_TYPE</strong>: Weekday or Weekends/Holiday.</p></li>
+<li><p><strong>TIME_PER_HOUR</strong>: Hour of the day in 24 hour format.</p></li>
+<li><p><strong>PT_TYPE</strong>: Type of public transportation.</p></li>
+<li><p><strong>ORIGIN_PT_CODE</strong>: Identifier for the bus stop where the trip originated.</p></li>
+<li><p><strong>DESTINATION_PT_CODE</strong>: Identifier for the bus stop where the trip ended.</p></li>
+<li><p><strong>TOTAL_TRIPS</strong>: Total number of trips recorded for each origin-destination pair.</p></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+</section>
 </section>
 
 </main> <!-- /main -->

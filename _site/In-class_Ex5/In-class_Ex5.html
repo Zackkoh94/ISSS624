@@ -135,7 +135,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="dropdown-header">In-Class Exercise 1</li>
         <li class="dropdown-header">In-Class Exercise 2</li>
         <li>
-    <a class="dropdown-item" href="../In-Class_Ex5/In-Class_Ex5.html" rel="" target="">
+    <a class="dropdown-item" href="../In-Class_Ex5/In-Class_Ex.html" rel="" target="">
  <span class="dropdown-text">In-Class Exercise 5</span></a>
   </li>  
     </ul>
@@ -187,7 +187,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#preparing-the-spatial-weight" id="toc-preparing-the-spatial-weight" class="nav-link" data-scroll-target="#preparing-the-spatial-weight"><span class="header-section-number">1.1</span> Preparing the Spatial Weight</a></li>
   </ul></li>
-  <li><a href="#preparing-spflow-objects" id="toc-preparing-spflow-objects" class="nav-link" data-scroll-target="#preparing-spflow-objects"><span class="header-section-number">2</span> Preparing spflow objects</a></li>
+  <li><a href="#prepare-spflow-objects" id="toc-prepare-spflow-objects" class="nav-link" data-scroll-target="#prepare-spflow-objects"><span class="header-section-number">2</span> Prepare spflow objects</a></li>
   <li><a href="#model-calibration" id="toc-model-calibration" class="nav-link" data-scroll-target="#model-calibration"><span class="header-section-number">3</span> Model Calibration</a>
   <ul class="collapse">
   <li><a href="#the-base-model" id="toc-the-base-model" class="nav-link" data-scroll-target="#the-base-model"><span class="header-section-number">3.1</span> The Base Model</a></li>
@@ -306,12 +306,6 @@ $ geometry   &lt;POINT [m]&gt; POINT (13576.31 32883.65), POINT (13228.59 44206.
 </div>
 </div>
 <p>In this study our analysis will be focused on planning subzone with bus stop. In view of this, the code chunk below will be used to perform Point-in-Polygon count analysis.</p>
-<section id="this-is-a-code-fix-it-later" class="level5">
-<h5 class="anchored" data-anchor-id="this-is-a-code-fix-it-later">this is a code, fix it later</h5>
-<p>#####} eval: false mpsz_busstop &lt;- st_intersection(busstop, mpsz) %&gt;% filter = BUSSTOP_COUNT</p>
-</section>
-<section id="eval-can-be-set-to-true-once-the-flow-is-fix" class="level5">
-<h5 class="anchored" data-anchor-id="eval-can-be-set-to-true-once-the-flow-is-fix">eval can be set to true once the flow is fix</h5>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -332,7 +326,6 @@ $ geometry   &lt;POINT [m]&gt; POINT (13576.31 32883.65), POINT (13228.59 44206.
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>mpsz_nb</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-</section>
 <section id="preparing-the-spatial-weight" class="level2" data-number="1.1">
 <h2 data-number="1.1" class="anchored" data-anchor-id="preparing-the-spatial-weight"><span class="header-section-number">1.1</span> Preparing the Spatial Weight</h2>
 <div class="cell">
@@ -341,10 +334,6 @@ $ geometry   &lt;POINT [m]&gt; POINT (13576.31 32883.65), POINT (13228.59 44206.
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>schools <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">"./data/rds/schools.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<p>import the rest</p>
-<section id="things-to-learn" class="level4">
-<h4 class="anchored" data-anchor-id="things-to-learn">Things to learn</h4>
-<p>Let us retrieve by using the code chunk below</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -353,7 +342,6 @@ $ geometry   &lt;POINT [m]&gt; POINT (13576.31 32883.65), POINT (13228.59 44206.
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>mpsz_var <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">"./data/rds/mpsz_var.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<p>check the data</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -724,10 +712,8 @@ $ LR_COUNT       &lt;int&gt; 3, 11, 7, 0, 20, 0, 0, 0, 19, 2, 4, 4, 1, 1, 13, 0,
 </div>
 </section>
 </section>
-</section>
-<section id="preparing-spflow-objects" class="level1" data-number="2">
-<h1 data-number="2"><span class="header-section-number">2</span> Preparing spflow objects</h1>
-<p>For our model, we choose the contiguity based neighborhood structure.</p>
+<section id="prepare-spflow-objects" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Prepare spflow objects</h1>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -817,7 +803,6 @@ Functions
 </div>
 </div>
 </div>
-<p>Do for destinations.</p>
 <p>In <strong>spflow</strong> package, <a href="https://lukece.github.io/spflow/reference/spflow_network_pair.html"><code>spflow_network_pair()</code></a></p>
 <div class="cell">
 <details>
@@ -1006,27 +991,27 @@ Dependent variable: log(1 + TRIPS)
 --------------------------------------------------
 Coefficients:
                           est     sd   t.stat  p.val
-rho_d                   0.680  0.004  192.553  0.000
+rho_d                   0.680  0.004  192.554  0.000
 rho_o                   0.678  0.004  187.732  0.000
-rho_w                  -0.396  0.006  -65.589  0.000
+rho_w                  -0.396  0.006  -65.591  0.000
 (Intercept)             0.410  0.065    6.266  0.000
 (Intra)                 1.313  0.081   16.263  0.000
 D_SCHOOL_COUNT          0.017  0.002    7.885  0.000
-D_SCHOOL_COUNT.lag1     0.002  0.004    0.551  0.582
+D_SCHOOL_COUNT.lag1     0.002  0.004    0.551  0.581
 D_BUSINESS_COUNT        0.000  0.000    3.015  0.003
-D_BUSINESS_COUNT.lag1   0.000  0.000   -0.249  0.803
+D_BUSINESS_COUNT.lag1   0.000  0.000   -0.249  0.804
 D_RETAILS_COUNT         0.000  0.000   -0.306  0.759
 D_RETAILS_COUNT.lag1    0.000  0.000    0.152  0.880
 D_FINSERV_COUNT         0.002  0.000    6.787  0.000
 D_FINSERV_COUNT.lag1   -0.002  0.001   -3.767  0.000
-O_BUSSTOP_COUNT         0.002  0.000    6.807  0.000
+O_BUSSTOP_COUNT         0.002  0.000    6.806  0.000
 O_BUSSTOP_COUNT.lag1   -0.001  0.000   -2.364  0.018
 O_AGE25_64              0.000  0.000    7.336  0.000
 O_AGE25_64.lag1         0.000  0.000   -2.797  0.005
-P_log(DISTANCE + 1)    -0.050  0.007   -6.792  0.000
+P_log(DISTANCE + 1)    -0.050  0.007   -6.793  0.000
 
 --------------------------------------------------
-R2_corr: 0.6942941  
+R2_corr: 0.6942945  
 Observations: 97969  
 Model coherence: Validated</code></pre>
 </div>
@@ -1063,7 +1048,7 @@ Model coherence: Validated</code></pre>
 </section>
 <section id="working-with-model-control" class="level2" data-number="3.2">
 <h2 data-number="3.2" class="anchored" data-anchor-id="working-with-model-control"><span class="header-section-number">3.2</span> Working with model control</h2>
-<p>the original code is for model_8</p>
+<p>original code for model_8</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -1096,7 +1081,7 @@ Dependent variable: log(1 + TRIPS)
 --------------------------------------------------
 Coefficients:
                           est     sd    t.stat  p.val
-rho_d                   0.689  0.003   196.833  0.000
+rho_d                   0.689  0.003   196.832  0.000
 rho_o                   0.687  0.004   192.214  0.000
 rho_w                  -0.473  0.003  -142.469  0.000
 (Intercept)             1.086  0.049    22.275  0.000
@@ -1116,12 +1101,12 @@ O_AGE25_64.lag1         0.000  0.000    -0.462  0.644
 P_log(DISTANCE + 1)    -0.125  0.005   -22.865  0.000
 
 --------------------------------------------------
-R2_corr: 0.6965975  
+R2_corr: 0.6965974  
 Observations: 97969  
 Model coherence: Validated</code></pre>
 </div>
 </div>
-<p>next, change to model_1</p>
+<p>model_1</p>
 <div class="cell">
 <details>
 <summary>Code</summary>

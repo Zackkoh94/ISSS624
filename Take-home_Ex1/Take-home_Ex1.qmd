@@ -43,8 +43,12 @@ The R packages used for the analysis are as follows:
 
 -   [**DT**](https://rstudio.github.io/DT/)**:** Create interactive html tables
 
+-   **ggplot2:** R package for creating complex and aesthetically pleasing data visualizations using a grammar of graphics.
+
+-   **gridExtra:** R package that provides functions for arranging multiple grid-based plots on a page, enhancing layout flexibility.
+
 ```{r}
-pacman::p_load(sf, sfdep, tmap, tidyverse, plotly, zoo, Kendall, kableExtra, ggrain, DT)
+pacman::p_load(sf, sfdep, tmap, tidyverse, plotly, zoo, Kendall, kableExtra, ggrain, DT, ggplot2, gridExtra)
 ```
 
 ### 1.2 Data Import
@@ -627,9 +631,6 @@ peak_weekend_evening_map
 Unsurprisingly, the weekdays' trip volumes surpass that of the weekends/holidays, most plausibly due to the working crowd. Nonetheless, the areas regardless of the peak hour time frames, the areas which see higher human traffic remains unchanged, highlighting the efficacy of the Singapore bus network in serving the needs of the commuters.\
 
 ```{r}
-library(ggplot2)
-library(gridExtra)
-
 # Function to create a scatter plot
 create_scatter_plot <- function(data, y_column_name, title, color = "blue") {
   ggplot(data, aes_string(x = "total_busstops", y = y_column_name)) +
