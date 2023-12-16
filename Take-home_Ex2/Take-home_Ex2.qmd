@@ -1,0 +1,28 @@
+---
+title: "Take-home_Ex2"
+editor: visual
+format: 
+  html:
+    code-fold: true
+    code-summary: "code chunk"
+    fontsize: 18px
+    number-sections: true
+    number-depth: 2
+execute:
+  echo: true # all code chunk will appear
+  eval: true # all code chunk will running live (be evaluated)
+  warning: false # don't display warning
+  message: false
+---
+
+# Background
+
+Transport operators and urban managers face challenges in addressing urban mobility questions. Traditionally, commuter surveys have been employed, but they are expensive, time-consuming, and labor-intensive. Often, by the time these surveys are processed, the data is outdated.
+
+With the digitization of urban infrastructure, including public buses, mass transit, and other utilities, a wealth of real-time data is now available. Technologies like GPS in vehicles and smart cards for commuters contribute to this data pool, allowing for the tracking of movement patterns in space and time.
+
+However, the rapid accumulation of geospatial data has exceeded planners' capacity to effectively process and convert it into actionable insights, negatively affecting the return on investment in data collection and management.
+
+# Objective 
+
+The objective is to illustrate the practical application of Geospatial Data Science and Analysis (GDSA) in decision-making processes. The task utilizes GDSA techniques to integrate and analyze data from various public sources, and then build spatial interaction models to uncover factors influencing urban mobility patterns, especially in public bus transit.
