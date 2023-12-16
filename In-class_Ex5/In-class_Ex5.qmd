@@ -1,0 +1,16 @@
+---
+title: "In-class_Ex5"
+editor: visual
+format: 
+  html:
+    code-fold: true
+    code-summary: "code chunk"
+    fontsize: 18px
+    number-sections: true
+    number-depth: 2
+execute:
+  echo: true # all code chunk will appear
+  eval: true # all code chunk will running live (be evaluated)
+  warning: false # don't display warning
+  message: false
+---
