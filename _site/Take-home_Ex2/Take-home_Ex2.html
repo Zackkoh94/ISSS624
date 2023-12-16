@@ -198,9 +198,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#spatial-interaction-modelling" id="toc-spatial-interaction-modelling" class="nav-link" data-scroll-target="#spatial-interaction-modelling"><strong>Spatial Interaction Modelling</strong></a></li>
   </ul></li>
   <li><a href="#package-imports" id="toc-package-imports" class="nav-link" data-scroll-target="#package-imports"><span class="header-section-number">4</span> Package Imports</a></li>
-  <li><a href="#data-imports" id="toc-data-imports" class="nav-link" data-scroll-target="#data-imports"><span class="header-section-number">5</span> Data Imports</a>
+  <li><a href="#data-description" id="toc-data-description" class="nav-link" data-scroll-target="#data-description"><span class="header-section-number">5</span> Data Description</a>
   <ul class="collapse">
-  <li><a href="#aspatial-data" id="toc-aspatial-data" class="nav-link" data-scroll-target="#aspatial-data"><span class="header-section-number">5.1</span> Aspatial Data</a></li>
+  <li><a href="#open-government-data" id="toc-open-government-data" class="nav-link" data-scroll-target="#open-government-data"><strong>Open Government Data</strong></a></li>
+  <li><a href="#specially-collected-data" id="toc-specially-collected-data" class="nav-link" data-scroll-target="#specially-collected-data"><strong>Specially collected data</strong></a></li>
+  </ul></li>
+  <li><a href="#data-imports" id="toc-data-imports" class="nav-link" data-scroll-target="#data-imports"><span class="header-section-number">6</span> Data Imports</a>
+  <ul class="collapse">
+  <li><a href="#aspatial-data" id="toc-aspatial-data" class="nav-link" data-scroll-target="#aspatial-data"><span class="header-section-number">6.1</span> Aspatial Data</a>
+  <ul class="collapse">
+  <li><a href="#data-preparation" id="toc-data-preparation" class="nav-link" data-scroll-target="#data-preparation">Data preparation</a></li>
+  <li><a href="#data-hygiene" id="toc-data-hygiene" class="nav-link" data-scroll-target="#data-hygiene">Data Hygiene</a></li>
+  <li><a href="#data-filtration" id="toc-data-filtration" class="nav-link" data-scroll-target="#data-filtration">Data Filtration</a></li>
+  </ul></li>
+  <li><a href="#geospatial-data" id="toc-geospatial-data" class="nav-link" data-scroll-target="#geospatial-data"><span class="header-section-number">6.2</span> Geospatial Data</a>
+  <ul class="collapse">
+  <li><a href="#data-hygiene-1" id="toc-data-hygiene-1" class="nav-link" data-scroll-target="#data-hygiene-1">Data Hygiene</a></li>
+  </ul></li>
+  <li><a href="#multipolygon" id="toc-multipolygon" class="nav-link" data-scroll-target="#multipolygon"><span class="header-section-number">6.3</span> Multipolygon&nbsp;</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -304,16 +319,33 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(sf, sfdep, tmap, tidyverse, plotly, zoo, Kendall, kableExtra, ggrain, DT, ggplot2, gridExtra,stplanr, performance)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(sf, sfdep, tmap, tidyverse, plotly, zoo, Kendall, kableExtra, ggrain, DT, ggplot2, gridExtra,stplanr, performance, dplyr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div></li>
 </ul>
 </section>
-<section id="data-imports" class="level1" data-number="5">
-<h1 data-number="5"><span class="header-section-number">5</span> Data Imports</h1>
+<section id="data-description" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Data Description</h1>
+<section id="open-government-data" class="level3">
+<h3 class="anchored" data-anchor-id="open-government-data"><strong>Open Government Data</strong></h3>
+<p>For the purpose of this assignment, data from several open government sources will be used:</p>
+<ul>
+<li><p><em>Passenger Volume by Origin Destination Bus Stops</em>, <em>Bus Stop Location</em> from <a href="https://datamall.lta.gov.sg/content/datamall/en.html">LTA DataMall</a>.</p></li>
+<li><p><em>Master Plan 2019 Subzone Boundary</em>, <em>HDB Property Information</em>, <em>School Directory and Information</em> and other relevant data from <a href="https://beta.data.gov.sg/">Data.gov.sg</a>.</p></li>
+</ul>
+</section>
+<section id="specially-collected-data" class="level3">
+<h3 class="anchored" data-anchor-id="specially-collected-data"><strong>Specially collected data</strong></h3>
+<ul>
+<li>Geospatial data for Businesses, retail and services, leisure and recreation, etc provided by course instructor, Professor Kam Tin Seong.</li>
+</ul>
+</section>
+</section>
+<section id="data-imports" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Data Imports</h1>
 <p>As shown in Take-home_Ex1, we have explored that the bus data from August to October has a similar distribution throughout, hence for the purpose of this study, we will be using data from the month of September.</p>
-<section id="aspatial-data" class="level2" data-number="5.1">
-<h2 data-number="5.1" class="anchored" data-anchor-id="aspatial-data"><span class="header-section-number">5.1</span> Aspatial Data</h2>
+<section id="aspatial-data" class="level2" data-number="6.1">
+<h2 data-number="6.1" class="anchored" data-anchor-id="aspatial-data"><span class="header-section-number">6.1</span> Aspatial Data</h2>
 <p>Load the dataset ‘Passenger Volume by Origin Destination Bus Stops’ obtained from LTA Datamall into your environment using the <code>read_csv()</code> function from the <code>readr</code> package.</p>
 <div class="cell">
 <details>
@@ -486,7 +518,308 @@ $ DESTINATION_PT_CODE &lt;chr&gt; "22221", "65159", "65159", "23311", "23311", "
 $ TOTAL_TRIPS         &lt;dbl&gt; 1, 9, 2, 6, 1, 2, 18, 3, 2, 1, 2, 5, 3, 5, 5, 19, …</code></pre>
 </div>
 </div>
-<p>Following the findings from Take-home_Ex1 as well, we concur that the Weekday Morning peak `</p>
+<section id="data-preparation" class="level3">
+<h3 class="anchored" data-anchor-id="data-preparation">Data preparation</h3>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>bus09 <span class="ot">&lt;-</span> bus09 <span class="sc">%&gt;%</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">ORIGIN_PT_CODE =</span> <span class="fu">as.factor</span>(ORIGIN_PT_CODE),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">DESTINATION_PT_CODE =</span> <span class="fu">as.factor</span>(DESTINATION_PT_CODE)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>As mentioned before, ORIGIN_PT_CODE and DESTINATION_PT_CODE’s data type are in character format. Because they represent busstop locations, they should be transformed into factors (categorical data type) for further analysis.</p>
+</section>
+<section id="data-hygiene" class="level3">
+<h3 class="anchored" data-anchor-id="data-hygiene">Data Hygiene</h3>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>count_duplicate_rows <span class="ot">&lt;-</span> <span class="cf">function</span>(df, df_name) {</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  df <span class="sc">%&gt;%</span>     </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by_all</span>() <span class="sc">%&gt;%</span>     </span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(<span class="fu">n</span>() <span class="sc">&gt;</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span>     </span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span>     </span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">df_name =</span> df_name, <span class="at">row_count =</span> <span class="fu">n</span>()) }  </span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>bus09_dupes  <span class="ot">&lt;-</span> <span class="fu">count_duplicate_rows</span>(bus09, <span class="st">"bus09"</span>)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(bus09_dupes)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 2
+  df_name row_count
+  &lt;chr&gt;       &lt;int&gt;
+1 bus09           0</code></pre>
+</div>
+</div>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>count_null_rows <span class="ot">&lt;-</span> <span class="cf">function</span>(df, df_name) {</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  df <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(<span class="fu">if_any</span>(<span class="fu">everything</span>(), is.na)) <span class="sc">%&gt;%</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">df_name =</span> df_name, <span class="at">row_count =</span> <span class="fu">n</span>())</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>bus09_nulls <span class="ot">&lt;-</span> <span class="fu">count_null_rows</span>(bus09, <span class="st">"bus09"</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(bus09_nulls)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 2
+  df_name row_count
+  &lt;chr&gt;       &lt;int&gt;
+1 bus09           0</code></pre>
+</div>
+</div>
+<p>There are no nulls or duplicates in the data, it shows good hygiene</p>
+</section>
+<section id="data-filtration" class="level3">
+<h3 class="anchored" data-anchor-id="data-filtration">Data Filtration</h3>
+<p>Following the findings from Take-home_Ex1 as well, we concur that the <strong>Weekday Morning peak period</strong> <strong>(6am-9am)</strong> is the peak period that sees the most High-High following the LISA analysis, hence will be made the target for the purpose of our task. This is done in the code block below.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>get_origin_dest <span class="ot">&lt;-</span> <span class="cf">function</span>(data, daytype, timeinterval) {</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  result <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(DAY_TYPE <span class="sc">==</span> daytype) <span class="sc">%&gt;%</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(TIME_PER_HOUR <span class="sc">&gt;=</span> timeinterval[<span class="dv">1</span>] <span class="sc">&amp;</span> TIME_PER_HOUR <span class="sc">&lt;=</span> timeinterval[<span class="dv">2</span>]) <span class="sc">%&gt;%</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(ORIGIN_PT_CODE, DESTINATION_PT_CODE) <span class="sc">%&gt;%</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">TRIPS =</span> <span class="fu">sum</span>(TOTAL_TRIPS)) <span class="sc">%&gt;%</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ungroup</span>() <span class="co"># Ungroup for further operations if needed</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(result)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Get the data for 'WEEKDAY' between 6am and 8am</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>wd_morning <span class="ot">&lt;-</span> <span class="fu">get_origin_dest</span>(bus09, <span class="st">'WEEKDAY'</span>, <span class="fu">c</span>(<span class="dv">6</span>, <span class="dv">8</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(wd_morning,<span class="dv">10</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kbl</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_styling</span>(</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">full_width =</span> F, </span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">bootstrap_options =</span> <span class="fu">c</span>(<span class="st">"condensed"</span>, <span class="st">"responsive"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="table-responsive">
+<table class="table table-condensed table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">ORIGIN_PT_CODE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">DESTINATION_PT_CODE</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">TRIPS</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">01012</td>
+<td style="text-align: left;">01112</td>
+<td style="text-align: right;">146</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">01012</td>
+<td style="text-align: left;">01113</td>
+<td style="text-align: right;">88</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">01012</td>
+<td style="text-align: left;">01121</td>
+<td style="text-align: right;">37</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">01012</td>
+<td style="text-align: left;">01211</td>
+<td style="text-align: right;">84</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">01012</td>
+<td style="text-align: left;">01311</td>
+<td style="text-align: right;">129</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">01012</td>
+<td style="text-align: left;">01621</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">01012</td>
+<td style="text-align: left;">07371</td>
+<td style="text-align: right;">7</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">01012</td>
+<td style="text-align: left;">60011</td>
+<td style="text-align: right;">27</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">01012</td>
+<td style="text-align: left;">60021</td>
+<td style="text-align: right;">14</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">01012</td>
+<td style="text-align: left;">60031</td>
+<td style="text-align: right;">25</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+
+</div>
+</div>
+</section>
+</section>
+<section id="geospatial-data" class="level2" data-number="6.2">
+<h2 data-number="6.2" class="anchored" data-anchor-id="geospatial-data"><span class="header-section-number">6.2</span> Geospatial Data</h2>
+<p>Like in Take-home_Ex1, we’ll be loading the Bus Stop Location shapefiles into R, resulting in an <strong><code>sf</code></strong> point object that contains 5161 points and 3 fields. Initially in the WSG84 geographical coordinate system, this data will be transformed to the EPSG 3414 projected coordinate system, which is specific to Singapore.<br>
+</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>busstop <span class="ot">&lt;-</span> <span class="fu">st_read</span>(<span class="at">dsn=</span><span class="st">"data/geospatial"</span>, <span class="at">layer =</span> <span class="st">"BusStop"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_transform</span>(<span class="at">crs =</span> <span class="dv">3414</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Reading layer `BusStop' from data source 
+  `C:\Zackkoh94\ISSS624\Take-home_Ex2\data\geospatial' using driver `ESRI Shapefile'
+Simple feature collection with 5161 features and 3 fields
+Geometry type: POINT
+Dimension:     XY
+Bounding box:  xmin: 3970.122 ymin: 26482.1 xmax: 48284.56 ymax: 52983.82
+Projected CRS: SVY21</code></pre>
+</div>
+</div>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>busstop</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Simple feature collection with 5161 features and 3 fields
+Geometry type: POINT
+Dimension:     XY
+Bounding box:  xmin: 3970.122 ymin: 26482.1 xmax: 48284.56 ymax: 52983.82
+Projected CRS: SVY21 / Singapore TM
+First 10 features:
+   BUS_STOP_N BUS_ROOF_N             LOC_DESC                  geometry
+1       22069        B06   OPP CEVA LOGISTICS POINT (13576.31 32883.65)
+2       32071        B23         AFT TRACK 13 POINT (13228.59 44206.38)
+3       44331        B01              BLK 239  POINT (21045.1 40242.08)
+4       96081        B05 GRACE INDEPENDENT CH POINT (41603.76 35413.11)
+5       11561        B05              BLK 166 POINT (24568.74 30391.85)
+6       66191        B03         AFT CORFE PL POINT (30951.58 38079.61)
+7       23389       B02A              PEC LTD   POINT (12476.9 32211.6)
+8       54411        B02              BLK 527 POINT (30329.45 39373.92)
+9       28531        B09              BLK 536 POINT (14993.31 36905.61)
+10      96139        B01              BLK 148  POINT (41642.81 36513.9)</code></pre>
+</div>
+</div>
+<section id="data-hygiene-1" class="level3">
+<h3 class="anchored" data-anchor-id="data-hygiene-1">Data Hygiene</h3>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>count_null_rows <span class="ot">&lt;-</span> <span class="cf">function</span>(df, df_name, columns) {</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Temporarily drop the geometry column</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  df_no_geom <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> </span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">st_set_geometry</span>(<span class="cn">NULL</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(<span class="fu">all_of</span>(columns))</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Counting null rows</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  null_counts <span class="ot">&lt;-</span> df_no_geom <span class="sc">%&gt;%</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(<span class="fu">if_any</span>(<span class="fu">everything</span>(), is.na)) <span class="sc">%&gt;%</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">df_name =</span> df_name, <span class="at">row_count =</span> <span class="fu">n</span>())</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(null_counts)</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply function to 'busstop' dataframe for 'BUS_STOP_N' column</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>busstop_nulls <span class="ot">&lt;-</span> <span class="fu">count_null_rows</span>(busstop, <span class="st">"busstop"</span>, <span class="fu">c</span>(<span class="st">"BUS_STOP_N"</span>))</span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(busstop_nulls)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>  df_name row_count
+1 busstop         0</code></pre>
+</div>
+</div>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>busstop <span class="sc">%&gt;%</span> </span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(BUS_STOP_N) <span class="sc">%&gt;%</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">n</span>()<span class="sc">&gt;</span><span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(BUS_STOP_N)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 32 × 3
+   BUS_STOP_N BUS_ROOF_N LOC_DESC            
+   &lt;chr&gt;      &lt;chr&gt;      &lt;chr&gt;               
+ 1 11009      B04        Ghim Moh Ter        
+ 2 11009      B04-TMNL   GHIM MOH TER        
+ 3 22501      B02        Blk 662A            
+ 4 22501      B02        BLK 662A            
+ 5 43709      B06        BLK 644             
+ 6 43709      B06        BLK 644             
+ 7 47201      UNK        &lt;NA&gt;                
+ 8 47201      NIL        W'LANDS NTH STN     
+ 9 51071      B21        MACRITCHIE RESERVOIR
+10 51071      B21        MACRITCHIE RESERVOIR
+# ℹ 22 more rows</code></pre>
+</div>
+</div>
+<p>There are no nulls in the BUS_STOP_N column, indicating that the primary key of the data at the very least is sound.<br>
+<br>
+Next we look at duplicates, it can be seen that there are indeed duplicates in the Geospatial data set. Upon investigation we can see for each corresponding <strong><code>BUS_STOP_N</code>,</strong> the <strong><code>LOC_DESC</code></strong> column is mostly duplicated, which could be a result of temporary bus stops or bus stop reconstruction which results in a shift to a location in the vicinity of the original bus stop.<br>
+This however is not the case for <strong><code>BUS_STOP_N</code> 47201</strong> which sees the <strong><code>LOC_DESC</code></strong> possessing a NA value, as well as <strong>52059</strong>, <strong>77329</strong> which sees that the <strong><code>LOC_DESC</code></strong> indicating a different bus stop for their duplicated <strong><code>BUS_STOP_N</code></strong>.<br>
+We then look to <a href="https://www.transitlink.com.sg/eservice/eguide/bscode_idx.php?bs_code=52059">Transitlink’s</a> website to verify the information of the identified <strong><code>BUS_STOP_N</code></strong> and will process the duplicates in the code blocks below</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Overwrite the busstop dataframe with the filtered results</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>busstop <span class="ot">&lt;-</span> busstop <span class="sc">%&gt;%</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    <span class="sc">!</span>(BUS_STOP_N <span class="sc">==</span> <span class="st">'47201'</span> <span class="sc">&amp;</span> <span class="fu">is.na</span>(LOC_DESC)) <span class="sc">&amp;</span> </span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="sc">!</span>(BUS_STOP_N <span class="sc">==</span> <span class="st">'52059'</span> <span class="sc">&amp;</span> LOC_DESC <span class="sc">==</span> <span class="st">'OPP BLK 65'</span>) <span class="sc">&amp;</span> </span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="sc">!</span>(BUS_STOP_N <span class="sc">==</span> <span class="st">'77329'</span> <span class="sc">&amp;</span> LOC_DESC <span class="sc">==</span> <span class="st">'Pasir Ris Central'</span>)</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>busstop <span class="ot">&lt;-</span> busstop <span class="sc">%&gt;%</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">duplicated</span>(BUS_STOP_N))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>busstop <span class="sc">%&gt;%</span> </span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(BUS_STOP_N) <span class="sc">%&gt;%</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">n</span>()<span class="sc">&gt;</span><span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(BUS_STOP_N)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 0 × 3
+# ℹ 3 variables: BUS_STOP_N &lt;chr&gt;, BUS_ROOF_N &lt;chr&gt;, LOC_DESC &lt;chr&gt;</code></pre>
+</div>
+</div>
+<p>We have processed the anomalies and dropped the duplicated as per the code output above.</p>
+</section>
+</section>
+<section id="multipolygon" class="level2" data-number="6.3">
+<h2 data-number="6.3" class="anchored" data-anchor-id="multipolygon"><span class="header-section-number">6.3</span> Multipolygon&nbsp;</h2>
 
 
 </section>
