@@ -14,3 +14,11 @@ execute:
   warning: false # don't display warning
   message: false
 ---
+
+```{r}
+devtools:: install_github("LukeCe/spflow")
+```
+
+```{r}
+pacman::p_load(tmap, sf, spdep, sp, Matrix, spflow, reshape2, knitr, tidyverse)
+```

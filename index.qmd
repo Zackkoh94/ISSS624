@@ -1,0 +1,19 @@
+---
+title: "Applied Geospatial Analytics (ISSS624)"
+author: "Zack Koh Chin Weng"
+---
+
+![](https://harrypotter-search.netlify.app/static/media/mapgif.2b90ec47.gif)
+
+```{=html}
+<p class="fade-in-text">Salutations,</p>
+```
+```{=html}
+<p class="fade-in-text">Welcome to ISSS624: Geospatial Analytics Applications. I am delighted to provide an insightful overview of my five-week educational journey in the realm of Geospatial Analytics, masterfully instructed by Professor Kam Tin Seong at Singapore Management University. For those seeking additional information regarding ISSS624, please peruse the dedicated journal section on this website.</p>
+```
+```{=html}
+<p class="fade-in-text">Sincerely,</p>
+```
+```{=html}
+<p class="fade-in-text">Zack</p>
+```

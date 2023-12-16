@@ -489,7 +489,7 @@ This sections aims to conduct visualization and sense making of the current data
 
 ```{r}
 # Switch to tmap interactive viewing mode
-tmap_mode("view")
+tmap_mode("plot")
 
 # Creating an interactive map of bus traffic
 bus_traffic_09_map <- tm_basemap("CartoDB.Positron") +
@@ -504,7 +504,7 @@ bus_traffic_09_map <- tm_basemap("CartoDB.Positron") +
     title = "Number of Bus Stops"  # Title for the color legend
   ) +
   tm_layout(
-    legend.show = FALSE)  
+    legend.show = TRUE)  
 
 # Display the interactive map
 bus_traffic_09_map
@@ -804,7 +804,7 @@ sig_lmi_2 <- get_sig_lmi_map(lisa_results[["peak_weekday_evening"]], "Weekday Af
 sig_lmi_3 <- get_sig_lmi_map(lisa_results[["peak_weekend_morning"]], "Weekend Morning" )
 sig_lmi_4 <- get_sig_lmi_map(lisa_results[["peak_weekend_evening"]], "Weekend Afternoon" )
 
-tmap_mode('view')
+tmap_mode('plot')
 
 tmap_arrange(
   sig_lmi_1,
