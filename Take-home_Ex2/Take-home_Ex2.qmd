@@ -91,7 +91,7 @@ The R packages used for the analysis are as follows:
 -   [**performance**](https://easystats.github.io/performance/)**:** for computing measures to assess model quality, which are not directly provided by R's 'base' or 'stats' packages. The primary goal of the **performance** package is to provide utilities for computing indices of model quality and goodness of fit. These include measures like r-squared (R2), root mean squared error (RMSE)
 
     ```{r}
-    pacman::p_load(sf, sfdep, sp, tmap, tidyverse, plotly, zoo, Kendall, kableExtra, ggrain, DT, ggplot2, gridExtra,stplanr, performance, dplyr)
+    pacman::p_load(sf, sfdep, sp, tmap, tidyverse, plotly, zoo, Kendall, kableExtra, ggrain, DT, ggplot2, gridExtra,stplanr, performance, dplyr, httr)
     ```
 
 # Data Description
@@ -663,8 +663,8 @@ odm1$D_HEX_ID <- as.factor(odm1$D_HEX_ID)
 
 flowLine <- left_join(flowLine, odm1,
                       by = c('O_HEX_ID' = 'O_HEX_ID',
-                             'D_HEX_ID' = 'D_HEX_ID')) %>% 
-  select(-c(WD_MORNING))
+                             'D_HEX_ID' = 'D_HEX_ID'))
+
 ```
 
 ```{r}
@@ -753,7 +753,7 @@ tm_shape(mpsz19) +
 
 -   Conversely, attractive attributes are elements that draw or lure entities to a certain place. They are connected with the journey's end point and epitomize the qualities that render a destination desirable.
 
-### Aspatial
+### Attractiveness
 
 #### Residential data (Attractive) 
 
@@ -833,19 +833,212 @@ tm_shape(mpsz19)+
   tm_layout(main.title = 'Business Distribution Map', main.title.position = "center")
 ```
 
-### Geospatial
+#### School (Attractiveness) 
+
+The Weekday morning peak is a time frame where most have to get up to head to school **(although we do recognize that polytechnic, ITE and University students may come at staggering timings, this is the best proxy)** . Hence using school geographic density, we attempt to look at the data's Attractiveness capabilities
+
+```{r}
+url <- "https://www.onemap.gov.sg/api/common/elastic/search"
+
+csv <- read_csv("./data/aspatial/Generalinformationofschools.csv")
+postcodes <- csv$postal_code
+
+found <- data.frame()
+not_found <- data.frame()
+
+for(postcode in postcodes){
+  query <-list('searchVal' = postcode, 'returnGeom'='Y', 'getAddrDetails'='Y', 'pageNum' = '1')
+  res  <- GET(url, query=query)
+  
+  if((content(res)$found)!=0)
+    found<-rbind(found, data.frame(content(res))[4:13])
+  else {
+  not_found = data.frame(postcode)
+  }
+}
+
+glimpse(found)
+```
+
+```{r}
+schools = merge(csv, found, by.x = 'postal_code', by.y = 'results.POSTAL', all = TRUE)
+
+# manually add the Zhenghua Secondary School data
+schools[schools$school_name == "ZHENGHUA SECONDARY SCHOOL", "results.LATITUDE"] <- 1.3887
+schools[schools$school_name == "ZHENGHUA SECONDARY SCHOOL", "results.LONGITUDE"] <- 103.7652
+
+# check the output
+glimpse(schools)
+```
+
+```{r}
+schools_sf <- schools %>%
+  rename(
+    latitude = "results.LATITUDE",
+    longitude = "results.LONGITUDE"
+  ) %>%
+  select(
+    postal_code, 
+    school_name, 
+    latitude, 
+    longitude
+  ) %>%
+  st_as_sf(
+    coords = c("longitude", "latitude"),
+    crs=4326
+  ) %>%
+  st_transform(
+    crs = 3414
+  )
+
+# visualize the output
+tm_shape(mpsz19)+
+  tm_polygons(col = 'white', alpha = 0.01) +
+  tm_shape(schools_sf) +
+  tm_dots(col = 'blue',
+          id = 'building') +
+  tm_layout(main.title = 'Schools Distribution Map', main.title.position = "center")
+```
+
+### Propulsiveness
+
+#### Train Station (Propulsive)
+
+While we recognize that train stations can be parked with Attractiveness, its presence could also be an element of Propulsiveness where commuters choose to take the train instead of the bus.
 
 ```{r}
 TrainStation <- st_read(dsn="data/geospatial", layer = "RapidTransitSystemStation") %>%    st_transform(crs = 3414)
 ```
 
-Attract:\
-Business\
-School\
-residential\
-\
-Propulsive:\
-train\
-distance
+```{r}
+# the data contain non closed ring, use st_is_valid to fix
+TrainStation <- TrainStation %>%
+  filter(st_is_valid(.))
+         
+# check the data
+glimpse(TrainStation)
+```
+
+```{r}
+# check for duplicates based on unique id
+if_else(n_distinct(TrainStation$geometry) == nrow(TrainStation), "no duplicates detected", "possible duplicates detected")
+```
+
+```{r}
+# visualize the output
+tm_shape(mpsz19)+
+  tm_polygons(col = 'white', alpha = 0.01) +
+  tm_shape(TrainStation) +
+  tm_fill(col = 'green',
+          id = 'STN_NAM_DE') +
+  tm_layout(main.title = 'MRT Station Distribution Map', main.title.position = "center")
+```
+
+#### Retail (Propulsive)
+
+While we recognize that train stations can be parked with Attractiveness, its presence could also be an element of Propulsiveness where commuters are given a chance to shop in heartland malls or markets near their place of residence.
+
+```{r}
+retails <- st_read(dsn="data/geospatial", layer = "Retails") %>%    st_transform(crs = 3414)
+```
+
+```{r}
+if_else(n_distinct(retails) == nrow(retails), "no duplicates detected", "possible duplicates detected")
+```
+
+```{r}
+# Subset rows for duplicates and arrange by POI_NAME and POI_ST_NAM
+duplicates <- retails[duplicated(retails) | duplicated(retails, fromLast = TRUE), ] %>%
+  arrange(POI_NAME, POI_ST_NAM)
+
+# Display the sorted rows with duplicatew
+kable(head(duplicates, n=20))
+```
+
+```{r}
+# Keep one row of the duplicates in the original dataset
+retails <- retails[!duplicated(retails) | duplicated(retails, fromLast = TRUE), ]
+
+# Display the resulting dataset
+glimpse(retails)
+```
+
+```{r}
+# visualize the output
+tm_shape(mpsz19) +
+  tm_polygons(alpha = 0.01) +
+  tm_shape(retails) +
+  tm_dots(col = 'green', id = 'POI_NAME') +
+  tm_layout(main.title="Retail Distribution Map", main.title.position = "center")
+```
+
+```{r}
+glimpse(flowLine)
+```
+
+```{r}
+ggplot(data = flowLine,
+       aes(x = WD_MORNING)) +
+  geom_histogram()
+```
 
 \
+
+```{r}
+ggplot(flowLine,
+       aes(x = dist, y = TRIPS)) +
+  geom_point() +
+  geom_hline(yintercept = 376.25, color = "red", linetype = "dashed") +
+  annotate("text", x = 20000,
+           y = 600, label = "95th percentile",
+           hjust = -0.1, color = "red", size = 3) +
+  geom_hline(yintercept = 1510, color = "purple", linetype = "dashed") +
+  annotate("text", x = 20000,
+           y = 1800, label = "99th percentile",
+           hjust = -0.1, color = "purple", size = 3) +
+  labs(title = "Number of Trips as a Function of Distance",
+       x = "Distance (m)",
+       y = "Number of Trips")
+```
+
+```{r}
+ggplot(flowLine,
+       aes(x = log(dist), y = log(TRIPS))) +
+  geom_point() +
+  geom_smooth(method = lm)
+```
+
+# Gravity Modelling
+
+## **Propulsive Factors**
+
+```{r}
+factors_holder <- hexagons_with_bus_stops %>%
+  rename(propul_num_bus_stops = num_bus_stops)
+
+# define function to add push poi counts columns
+add_push_poi_counts <- function(factors_holder, poi_datasets) {
+  # Loop through each POI dataset
+  for (poi_name in poi_datasets) {
+    # Add a new column with the count using st_intersects and lengths
+    factors_holder[[paste0("push_", poi_name, "_count")]] <- 
+      ifelse(
+        lengths(st_intersects(factors_holder, get(poi_name))) == 0,
+        0.99,
+        lengths(st_intersects(factors_holder, get(poi_name)))
+      )
+  }
+  
+  # Return the updated factors_holder dataframe
+  return(factors_holder)
+}
+
+# List of POI dataset names
+push_poi_datasets <- c("station", "trainexit", "hdb_sf")
+
+# Call the function
+factors_holder <- add_push_poi_counts(factors_holder, push_poi_datasets)
+
+# check the output
+glimpse(factors_holder)
+```
