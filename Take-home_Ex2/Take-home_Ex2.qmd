@@ -91,7 +91,7 @@ The R packages used for the analysis are as follows:
 -   [**performance**](https://easystats.github.io/performance/)**:** for computing measures to assess model quality, which are not directly provided by R's 'base' or 'stats' packages. The primary goal of the **performance** package is to provide utilities for computing indices of model quality and goodness of fit. These include measures like r-squared (R2), root mean squared error (RMSE)
 
     ```{r}
-    pacman::p_load(sf, sfdep, sp, tmap, tidyverse, plotly, zoo, Kendall, kableExtra, ggrain, DT, ggplot2, gridExtra,stplanr, performance, dplyr, httr)
+    pacman::p_load(sf, sfdep, sp, tmap, tidyverse, plotly, zoo, Kendall, kableExtra, ggrain, DT, ggplot2, gridExtra,stplanr, performance, dplyr, httr, corrplot, patchwork)
     ```
 
 # Data Description
@@ -745,6 +745,51 @@ tm_shape(mpsz19) +
   tm_scale_bar()
 ```
 
+In this map, we have excluded trips with fewer than 5446.92 trips for easier analysis as can be seen above, it is illegible when there are too many lines. Lines with greater thickness indicate a higher number of trips, while the line length signifies the distance of each trip between hexagons.
+
+It was noted that certain bus routes transport a larger number of passengers. Prominent routes were observed in the Woodlands Checkpoint **(plausibly due to Malaysians commuting to work from beyond the causeway)** and Boon Lay regions **(understandably as it is an area which relies heavily on feeder buses to get to the main transport facilities such as the bus interchange and MRT station)**. Additionally, several routes stretching from the North to the East of Singapore are notably longer.
+
+```{r}
+tmap_mode('plot')
+
+q3q4_flowLine <- flowLine %>%
+  filter(TRIPS >= 10000)
+
+count_busstop_filtered <- count_busstop %>%
+  filter(hex_id %in% c(q3q4_flowLine$O_HEX_ID, q3q4_flowLine$D_HEX_ID))
+
+tm_shape(mpsz19) +
+  tm_polygons(alpha=0.3)+
+              #col='black') +
+#tm_shape(count_busstop_filtered) +
+  #tm_polygons(alpha=0.3) +
+  
+  q3q4_flowLine %>%
+  tm_shape() +
+  tm_lines(lwd = 'TRIPS',
+           style = 'quantile',
+           scale= c(1, 3, 9, 15, 21, 30),
+           #scale= c(0.1, 1, 3, 5, 7, 10),
+           n = 6,
+           alpha= 0.3,
+           col='red') +
+  tm_view(set.zoom.limits = c(11,17)) +
+  tm_layout(main.title = 'O-D Flow On Weekday Morning Peak hour' ,
+            main.title.position = "center",
+            main.title.size = 2.0,
+            main.title.fontface = 'bold') +
+  tm_compass(type="8star", size = 2) +
+  tm_scale_bar()
+```
+
+In this map, we have chosen to display only trips with 10,000 or more journeys, regardless of the distance traveled.
+
+Key Observations:
+
+1)  The most heavily trafficked flows were found in the vicinity of the Woodlands Check Point, a key point for commuter transport across the causeway.
+
+2)  High traffic flows were frequently linked to bus or train stations as destinations, indicating that many passengers use buses to connect to further transit options. This observation suggests that the proximity of bus interchanges or train stations might play a significant role in explaining 'TRIPS' in our forthcoming Spatial Interaction Model.
+
 # **Preparing Origin and Destination Attributes**
 
 ## Addtional Data for Propulsiveness and Attractiveness
@@ -760,30 +805,15 @@ tm_shape(mpsz19) +
 The Weekday morning peak is a time frame where most have to get up about to do their business, whether it is going to school or work. Hence, using residential HDB data as a proxy for human density, we attempt to look at the data's Attractive capabilities
 
 ```{r}
-hdb <- read_csv('data/aspatial/hdb.csv') %>% 
-  filter(residential == "Y") %>% 
-  mutate(total_rental_ct = `1room_rental`*1 + `2room_rental`*2 + `3room_rental`*3 + `other_room_rental`*4,
-         total_1room_ct = `1room_sold`,
-         total_2room_ct = `2room_sold`*2,
-         total_3room_ct = `3room_sold`*10,
-         total_4room_ct = `4room_sold`*21,
-         total_5room_ct = `5room_sold`*13,
-         total_exec_ct = `exec_sold`*4,
-         total_multi_ct = `multigen_sold`*13,
-         total_studio_ct = `studio_apartment_sold`,
-         total_owner_ct = `1room_sold`*1 + `2room_sold`*2 + `3room_sold`*10 + `4room_sold`*21 + `5room_sold`*13 + `exec_sold`*4 + `multigen_sold`*13 + `studio_apartment_sold`*1) %>% 
-  select(blk_no, street, total_rental_ct, total_1room_ct, total_1room_ct,total_2room_ct,total_3room_ct,total_4room_ct,total_5room_ct,total_exec_ct,total_multi_ct, total_studio_ct,total_owner_ct, lat, lng)
-```
+# Load csv file
+hdb <- read_csv("data/aspatial/hdb.csv")
 
-```{r}
+# check the data
 glimpse(hdb)
 ```
 
 ```{r}
-coordinates <- hdb[, c("lng", "lat")]  
-coordinates <- as.matrix(coordinates)  
-spatial_points <- SpatialPointsDataFrame(coords = coordinates, data = hdb)
-
+glimpse(hdb)
 ```
 
 ```{r}
@@ -799,6 +829,7 @@ tm_shape(mpsz19)+
   tm_dots(col = 'lightblue',
           id = 'building') +
   tm_layout(main.title = 'HDB Distribution Map', main.title.position = "center")
+
 ```
 
 ```{r}
@@ -972,6 +1003,8 @@ tm_shape(mpsz19) +
   tm_layout(main.title="Retail Distribution Map", main.title.position = "center")
 ```
 
+#### Distance (Propulsive)
+
 ```{r}
 glimpse(flowLine)
 ```
@@ -1008,20 +1041,27 @@ ggplot(flowLine,
   geom_smooth(method = lm)
 ```
 
+We observe that the further the distance travelled, the lesser the volume of trips, hence we mark distance as a propulsive factor
+
 # Gravity Modelling
 
 ## **Propulsive Factors**
 
 ```{r}
-factors_holder <- hexagons_with_bus_stops %>%
-  rename(propul_num_bus_stops = num_bus_stops)
+glimpse(count_busstop)
+```
 
-# define function to add push poi counts columns
-add_push_poi_counts <- function(factors_holder, poi_datasets) {
+```{r}
+
+factors_holder <- count_busstop %>%
+  rename(propul_count_busstop = count_busstop)
+
+# Define a function to add push poi counts columns
+add_propul_poi_counts <- function(factors_holder, poi_datasets) {
   # Loop through each POI dataset
   for (poi_name in poi_datasets) {
     # Add a new column with the count using st_intersects and lengths
-    factors_holder[[paste0("push_", poi_name, "_count")]] <- 
+    factors_holder[[paste0("propul_", poi_name, "_count")]] <- 
       ifelse(
         lengths(st_intersects(factors_holder, get(poi_name))) == 0,
         0.99,
@@ -1034,11 +1074,431 @@ add_push_poi_counts <- function(factors_holder, poi_datasets) {
 }
 
 # List of POI dataset names
-push_poi_datasets <- c("station", "trainexit", "hdb_sf")
+propul_poi_datasets <- c("retails", "TrainStation", "flowLine")
 
 # Call the function
-factors_holder <- add_push_poi_counts(factors_holder, push_poi_datasets)
+factors_holder <- add_propul_poi_counts(factors_holder, propul_poi_datasets)
 
-# check the output
+# Check the output
+glimpse(factors_holder)
+
+```
+
+```{r}
+hdb_sf
+```
+
+```{r}
+hdb_capacity <- hdb_sf %>%
+  mutate(capacity = `1room_sold` *1 +
+           `2room_sold` * 2+
+           `3room_sold` * 3+
+           `4room_sold` * 4+
+           `5room_sold` * 5+
+           exec_sold * 4+
+           multigen_sold * 6+
+           studio_apartment_sold *1+
+           `1room_rental` * 1+
+           `2room_rental` * 2+
+           `3room_rental` * 3+
+           other_room_rental * 2) %>%
+  select(blk_no, geometry, capacity)
+
+# get hexagon_id for hdb, then sum the capacity
+hdb_capacity <- st_join(hdb_capacity, count_busstop, by = NULL, join = st_within) %>%
+  group_by(hex_id) %>%
+  summarise(propul_est_pop = sum(capacity)) %>%
+  st_drop_geometry()
+
+# Convert hex_id to character in both dataframes
+factors_holder <- factors_holder %>% mutate(hex_id = as.character(hex_id))
+hdb_capacity <- hdb_capacity %>% mutate(hex_id = as.character(hex_id))
+
+# Left join factors_holder and hdb_capacity by hex_id
+factors_holder <- left_join(factors_holder, hdb_capacity, by = "hex_id") %>%
+  mutate(hex_id = as.factor(hex_id)) %>%  # Convert back to factor
+  mutate_at(vars(contains("propul_est_pop")), list(~coalesce(., 0.99)))  # Fill missing values with 0.99 
+
 glimpse(factors_holder)
 ```
+
+```{r}
+hdb_capacity <- hdb_sf %>%
+  mutate(capacity = `1room_sold` *1 +
+           `2room_sold` * 2+
+           `3room_sold` * 3+
+           `4room_sold` * 4+
+           `5room_sold` * 5+
+           exec_sold * 4+
+           multigen_sold * 6+
+           studio_apartment_sold *1+
+           `1room_rental` * 1+
+           `2room_rental` * 2+
+           `3room_rental` * 3+
+           other_room_rental * 2) %>%
+  select(blk_no, geometry, capacity)
+
+# get hex_id for hdb, then sum the capacity
+hdb_capacity <- st_join(hdb_capacity, count_busstop, by = NULL, join = st_within) %>%
+  group_by(hex_id) %>%
+  summarise(propul_est_pop = sum(capacity)) %>%
+  st_drop_geometry()
+
+# Convert hex_id to character in both dataframes
+factors_holder <- factors_holder %>% mutate(hex_id = as.character(hex_id))
+hdb_capacity <- hdb_capacity %>% mutate(hex_id = as.character(hex_id))
+
+# Left join factors_holder and hdb_capacity by hex_id
+factors_holder <- left_join(factors_holder, hdb_capacity, by = "hex_id") %>%
+  mutate(hex_id = as.factor(hex_id)) %>%  # Convert back to factor
+  mutate_at(vars(contains("propul_est_pop")), list(~coalesce(., 0.99)))  # Fill missing values with 0.99 
+
+glimpse(factors_holder)
+```
+
+```{r}
+hdb_capacity <- hdb_sf %>%
+  mutate(capacity = `1room_sold` *1 +
+           `2room_sold` * 2+
+           `3room_sold` * 3+
+           `4room_sold` * 4+
+           `5room_sold` * 5+
+           exec_sold * 4+
+           multigen_sold * 6+
+           studio_apartment_sold *1+
+           `1room_rental` * 1+
+           `2room_rental` * 2+
+           `3room_rental` * 3+
+           other_room_rental * 2) %>%
+  select(blk_no, geometry, capacity)
+
+# get hex_id for hdb, then sum the capacity
+hdb_capacity <- st_join(hdb_capacity, count_busstop, by = NULL, join = st_within) %>%
+  group_by(hex_id) %>%
+  summarise(propul_est_pop = sum(capacity)) %>%
+  st_drop_geometry()
+
+# Convert hex_id to character in both dataframes
+factors_holder <- factors_holder %>% mutate(hex_id = as.character(hex_id))
+hdb_capacity <- hdb_capacity %>% mutate(hex_id = as.character(hex_id))
+
+# Left join factors_holder and hdb_capacity by hex_id
+factors_holder <- left_join(factors_holder, hdb_capacity, by = "hex_id") %>%
+  mutate(hex_id = as.factor(hex_id)) %>%  # Convert back to factor
+  mutate_at(vars(contains("propul_est_pop")), list(~coalesce(., 0.99)))  # Fill missing values with 0.99 
+
+glimpse(factors_holder)
+```
+
+## **Attractive Factors**
+
+```{r}
+# define function to add att poi counts columns
+add_att_poi_counts <- function(factors_holder, poi_datasets) {
+  # Loop through each POI dataset
+  for (poi_name in poi_datasets) {
+    # Add a new column with the count using st_intersects and lengths
+    factors_holder[[paste0("att_", poi_name, "_count")]] <- 
+      ifelse(
+        lengths(st_intersects(factors_holder, get(poi_name))) == 0,
+        0.99,
+        lengths(st_intersects(factors_holder, get(poi_name)))
+      )
+  }
+  
+  # Return the updated factors_holder dataframe
+  return(factors_holder)
+}
+
+# List of POI dataset names
+att_poi_datasets <- c("hdb_sf", "business", "schools_sf")
+
+# Call the function
+factors_holder <- add_att_poi_counts(factors_holder, att_poi_datasets)
+
+glimpse(factors_holder)
+```
+
+## Final Dataframe
+
+```{r}
+n_distinct(factors_holder$hex_id)
+```
+
+```{r}
+glimpse(factors_holder)
+```
+
+```{r}
+# Convert hex_id in factors_holder to integer
+factors_holder <- factors_holder %>%
+  mutate(hex_id = as.factor(hex_id))
+
+
+# Perform the left joins with matching data types
+final_df <- left_join(FD1, factors_holder %>% select(starts_with("att_"), hex_id), by = c("O_HEX_ID" = "hex_id"))
+final_df <- left_join(final_df, factors_holder %>% select(starts_with("propul_"), hex_id), by = c("D_HEX_ID" = "hex_id"))
+
+# Check the output
+glimpse(final_df)
+
+```
+
+```{r}
+write_rds(final_df, "data/rds/final_df_the2.rds")
+```
+
+```{r}
+final_df <- na.omit(final_df)
+```
+
+```{r}
+head(final_df,10) %>%
+  kbl() %>%
+  kable_styling(
+    full_width = F, 
+    bootstrap_options = c("condensed", "responsive"))
+```
+
+## Correlation Matrix
+
+```{r}
+# Select columns by indices
+numeric_cols_indices <- c(3, 6, 7, 8, 9, 11, 12, 13, 14, 17)
+correlation_df <- final_df[, numeric_cols_indices]
+
+# Check the structure of the new dataframe
+str(correlation_df)
+
+# Calculate the correlation matrix, handling NA values
+correlation_matrix <- cor(correlation_df, use = "pairwise.complete.obs")
+
+# Load the corrplot package if not already loaded
+if (!requireNamespace("corrplot", quietly = TRUE)) {
+  install.packages("corrplot")
+}
+library(corrplot)
+
+# Generate the correlation plot
+corrplot.mixed(correlation_matrix,
+               lower = "color",
+               upper = "number",
+               tl.pos = "lt",
+               tl.col = "black",
+               tl.cex = 0.7,
+               number.cex = 0.4)
+```
+
+There no indications of overly high correlations which could result in multicollinearity, albeit the correlations not showing very strong indications of being correlated.
+
+## Unconstrained
+
+```{r}
+final_df <- final_df %>%
+  mutate(
+    propul_count_busstop = ifelse(propul_count_busstop <= 0, 0.01, propul_count_busstop),
+    dist = ifelse(dist <= 0, 0.01, dist),
+    att_hdb_sf_count = ifelse(att_hdb_sf_count <= 0, 0.01, att_hdb_sf_count),
+    att_business_count = ifelse(att_business_count <= 0, 0.01, att_business_count),
+    att_schools_sf_count = ifelse(att_schools_sf_count <= 0, 0.01, att_schools_sf_count),
+    propul_retails_count = ifelse(propul_retails_count <= 0, 0.01, propul_retails_count),
+    propul_TrainStation_count = ifelse(propul_TrainStation_count <= 0, 0.01, propul_TrainStation_count),
+    propul_flowLine_count = ifelse(propul_flowLine_count <= 0, 0.01, propul_flowLine_count),
+    propul_est_pop = ifelse(propul_est_pop <= 0, 0.01, propul_est_pop)
+  )
+
+# Fit the model
+uncSIM <- glm(formula = TRIPS ~ 
+                log(dist) +
+                log(att_hdb_sf_count) +
+                log(att_business_count) +
+                log(att_schools_sf_count) +
+                log(propul_retails_count) +
+                log(propul_TrainStation_count) +
+                log(propul_flowLine_count) +
+                log(propul_est_pop),
+              family = poisson(link = "log"),
+              data = final_df,
+              na.action = na.exclude)
+
+summary(uncSIM)
+```
+
+## Origin Constrained
+
+```{r}
+final_df <- final_df %>%
+  mutate(
+    propul_count_busstop = ifelse(propul_count_busstop <= 0, 0.01, propul_count_busstop),
+    dist = ifelse(dist <= 0, 0.01, dist),
+    att_hdb_sf_count = ifelse(att_hdb_sf_count <= 0, 0.01, att_hdb_sf_count),
+    att_business_count = ifelse(att_business_count <= 0, 0.01, att_business_count),
+    att_schools_sf_count = ifelse(att_schools_sf_count <= 0, 0.01, att_schools_sf_count),
+    propul_retails_count = ifelse(propul_retails_count <= 0, 0.01, propul_retails_count),
+    propul_TrainStation_count = ifelse(propul_TrainStation_count <= 0, 0.01, propul_TrainStation_count),
+    propul_flowLine_count = ifelse(propul_flowLine_count <= 0, 0.01, propul_flowLine_count),
+    propul_est_pop = ifelse(propul_est_pop <= 0, 0.01, propul_est_pop)
+  )
+
+# Fit the model (corrected)
+orcSIM <- glm(formula = TRIPS ~ 
+                log(dist) +
+                log(att_hdb_sf_count) +
+                log(att_business_count) +
+                log(att_schools_sf_count),
+              family = poisson(link = "log"),
+              data = final_df,
+              na.action = na.exclude)
+
+summary(orcSIM)
+```
+
+## Destination Constrained
+
+```{r}
+final_df <- final_df %>%
+  mutate(
+    propul_count_busstop = ifelse(propul_count_busstop <= 0, 0.01, propul_count_busstop),
+    dist = ifelse(dist <= 0, 0.01, dist),
+    att_hdb_sf_count = ifelse(att_hdb_sf_count <= 0, 0.01, att_hdb_sf_count),
+    att_business_count = ifelse(att_business_count <= 0, 0.01, att_business_count),
+    att_schools_sf_count = ifelse(att_schools_sf_count <= 0, 0.01, att_schools_sf_count),
+    propul_retails_count = ifelse(propul_retails_count <= 0, 0.01, propul_retails_count),
+    propul_TrainStation_count = ifelse(propul_TrainStation_count <= 0, 0.01, propul_TrainStation_count),
+    propul_flowLine_count = ifelse(propul_flowLine_count <= 0, 0.01, propul_flowLine_count),
+    propul_est_pop = ifelse(propul_est_pop <= 0, 0.01, propul_est_pop)
+  )
+
+# Fit the model
+decSIM <- glm(formula = TRIPS ~ 
+                log(dist) +
+                log(propul_retails_count) +
+                log(propul_TrainStation_count) +
+                log(propul_flowLine_count) +
+                log(propul_est_pop),
+              family = poisson(link = "log"),
+              data = final_df,
+              na.action = na.exclude)
+
+summary(decSIM)
+```
+
+## Doubly Constrained
+
+```{r}
+docSIM <- glm(formula = TRIPS ~ 
+                O_HEX_ID +
+                D_HEX_ID +
+                log(dist),
+              family = poisson(link = "log"),
+              data = final_df,
+              na.action = na.exclude)
+
+summary(docSIM)
+```
+
+# Comparing the results and conclusions
+
+## **Performance Table**
+
+```{r}
+model_list <- list(
+  Unconstrained = uncSIM,
+  Origin_Constrained = orcSIM,
+  Destination_Constrained = decSIM,
+  Doubly_Constrained = docSIM
+)
+
+# Compare performance with multiple metrics
+compare_performance(model_list, metrics = c("AIC", "BIC", "RMSE"))
+```
+
+**AIC (Akaike Information Criterion)**: - AIC is a measure of the relative quality of statistical models for a given set of data. Lower AIC values indicate a model is considered better because it achieves a good fit with fewer parameters. - The weights in parentheses suggest the probability that each model is the best among the set of models evaluated. A weight near 1 indicates a model is most likely to be the best, while a weight near 0 indicates it is less likely. - According to the AIC weights, the Doubly_Constrained model is overwhelmingly the preferred model (\>0.999 probability of being the best model). The other three models have weights less than 0.001, indicating they are less likely to be the best.
+
+**BIC (Bayesian Information Criterion)**: - BIC is similar to AIC but includes a penalty term for the number of parameters in the model, which tends to favor simpler models. As with AIC, lower BIC values are better. - The weights here, like the AIC weights, indicate that the Doubly_Constrained model is far more likely to be the best model according to the BIC as well.
+
+**RMSE (Root Mean Square Error)**: - RMSE measures the model's prediction error, which is the square root of the average squared differences between the predicted and observed values. A lower RMSE value indicates a better fit. - The RMSE values reinforce the AIC and BIC findings, with the Doubly_Constrained model having a significantly lower RMSE (1043.199) than the other models. This means its predictions are, on average, closer to the observed data.
+
+**Interpretation**: - The Doubly_Constrained model outperforms the other models in terms of fit and complexity as measured by AIC and BIC. It is also the best model in terms of predictive accuracy, with the lowest RMSE. - The Origin_Constrained model is slightly better than the Unconstrained and Destination_Constrained models, but it still falls short when compared to the Doubly_Constrained model. - The similar performance of the Unconstrained and Destination_Constrained models, both with AIC and BIC weights of less than 0.001, suggests that they might be overfitting the data or including too many parameters that do not contribute to a better fit. - Overall, the analysis suggests that accounting for constraints on both the origin and destination of trips provides the most accurate and efficient model for predicting trip distribution in this context.
+
+## Visualization of fitted values
+
+```{r}
+
+# Function to round fitted values and create a data frame
+round_and_rename <- function(sim_data, sim_name) {
+  as.data.frame(sim_data$fitted.values) %>%
+    round(digits = 0) %>%
+    setNames(paste0(sim_name, "_TRIPS"))
+}
+
+# Round and rename fitted values for each simulation
+# Make sure the variables orcSIM, decSIM, etc. are correctly defined in your context
+uncSIM_fitted <- round_and_rename(orcSIM, "uncSIM")
+orcSIM_fitted <- round_and_rename(orcSIM, "orcSIM")
+decSIM_fitted <- round_and_rename(decSIM, "decSIM")
+docSIM_fitted <- round_and_rename(docSIM, "docSIM")
+
+# Combine the rounded and renamed fitted values
+# Ensure final_df is defined and contains relevant data
+final_df_viz <- final_df %>%
+  cbind(uncSIM_fitted, orcSIM_fitted, decSIM_fitted, docSIM_fitted)
+
+# Create a function to generate a ggplot
+generate_ggplot <- function(data, x_col, title) {
+  ggplot(data = data, aes_string(x = x_col, y = "TRIPS")) +
+    geom_point(
+      aes(size = TRIPS / 10000),
+      alpha = .6,
+      shape = 21
+    ) +
+    xlim(0, 50000) +
+    geom_smooth(
+      method = "lm",
+      se = TRUE,
+      color = "blue"
+    ) +
+    labs(title = title) +
+    theme(
+      plot.title = element_text(size = 10),
+      axis.text.x = element_blank(),
+      axis.ticks.x = element_blank(),
+      axis.text.y = element_blank(),
+      axis.title.y = element_blank(),
+      legend.position = "none"  # Hide the legend
+    )
+}
+
+# Generate ggplots for each simulation
+p_unc <- generate_ggplot(final_df_viz, "uncSIM_TRIPS", "Unconstrained")
+p_orc <- generate_ggplot(final_df_viz, "orcSIM_TRIPS", "Origin-constrained")
+p_dec <- generate_ggplot(final_df_viz, "decSIM_TRIPS", "Destination-constrained")
+p_doc <- generate_ggplot(final_df_viz, "docSIM_TRIPS", "Doubly-constrained")
+
+# Combine the plots using patchwork
+combined_plot <- p_unc + p_orc + p_dec + p_doc 
+
+# Print the combined plot
+print(combined_plot)
+
+```
+
+1.  **Unconstrained Model**:
+    -   This model shows a lot of variation with many points densely packed at the lower end of the `uncSIM_TRIPS` axis, suggesting a large number of trips with smaller values.
+    -   The spread of the points suggests that there's no restriction on the flow of trips between origins and destinations, leading to a wide range of trip volumes.
+2.  **Origin-constrained Model**:
+    -   The points are densely concentrated at the lower end of the `orcSIM_TRIPS` axis, similar to the unconstrained model, which indicates a significant number of trips with lower volumes.
+    -   The points do not show a clear pattern, which suggests that even with the constraint on the origin, the trip volumes vary widely.
+3.  **Destination-constrained Model**:
+    -   Like the other two models above, there is a dense cluster of points at the lower end of the `decSIM_TRIPS` axis.
+    -   There's a noticeable line of points extending up, which may suggest that for certain destinations, the number of trips increases with the trip volume. However, the overall pattern is still quite varied.
+4.  **Doubly-constrained Model**:
+    -   This model exhibits a clearer pattern with points aligning along a trend line, represented by the blue line.
+    -   The size of the points, representing trip volume, is more varied and extends towards higher trip volumes along the trend line, indicating a more predictable relationship between the simulation's inputs and the number of trips.
+    -   This pattern suggests that when both origin and destination constraints are applied, the trip volumes become more predictable, and there is a trend that can be modeled, which is reflected by the regression line.
+
+**Additional Insights**:
+
+-   The presence of many small circles, particularly in the unconstrained and origin-constrained models, indicates a large number of trips with smaller volumes.
+-   The doubly-constrained model seems to fit the data best, as indicated by the alignment of the points with the trend line, suggesting that considering both origins and destinations constraints provides a more accurate representation of the trip distribution.
+-   The unconstrained and origin-constrained models show that without destination constraints, there's a wide distribution of trips, which could imply that destinations vary widely and some are much more popular than others.
