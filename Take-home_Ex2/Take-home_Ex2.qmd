@@ -108,7 +108,7 @@ For the purpose of this assignment, data from several open government sources wi
 
 -   Geospatial data for Businesses, retail and services, leisure and recreation, etc provided by course instructor, Professor Kam Tin Seong.
 
-# Data Imports
+# Data Imports And Preparation
 
 As shown in Take-home_Ex1, we have explored that the bus data from August to October has a similar distribution throughout, hence for the purpose of this study, we will be using data from the month of September.
 
@@ -119,6 +119,16 @@ Load the dataset 'Passenger Volume by Origin Destination Bus Stops' obtained fro
 ```{r}
 bus09 <- read_csv("data/aspatial/origin_destination_bus_202309.csv")
 ```
+
+head(bus09,10) %\>%
+
+kbl() %\>%
+
+kable_styling(
+
+full_width = F,
+
+bootstrap_options = c("condensed", "responsive"))
 
 ```{r}
 head(bus09,10) %>%
@@ -161,7 +171,7 @@ bus09 <- bus09 %>%
   )
 ```
 
-As mentioned before, ORIGIN_PT_CODE and DESTINATION_PT_CODE's data type are in character format. Because they represent busstop locations, they should be transformed into factors (categorical data type) for further analysis.
+As mentioned before, ORIGIN_PT_CODE and DESTINATION_PT_CODE's data type are in character format. Because they represent bus stop locations, they should be transformed into factors (categorical data type) for further analysis.
 
 ### Data Hygiene
 
@@ -207,7 +217,7 @@ get_origin_dest <- function(data, daytype, timeinterval) {
 }
 
 # Get the data for 'WEEKDAY' between 6am and 8am
-wd_morning <- get_origin_dest(bus09, 'WEEKDAY', c(6, 8))
+wd_morning <- get_origin_dest(bus09, 'WEEKDAY', c(6, 9))
 
 ```
 
@@ -217,6 +227,10 @@ head(wd_morning,10) %>%
   kable_styling(
     full_width = F, 
     bootstrap_options = c("condensed", "responsive"))
+```
+
+```{r}
+wd_morning
 ```
 
 ## Geospatial Data
@@ -299,3 +313,263 @@ busstop %>%
 We have processed the anomalies and dropped the duplicated as per the code output above.
 
 ## Multipolygon 
+
+```{r}
+mpsz19 <- st_read(dsn='data/geospatial/',
+                layer='MPSZ-2019') %>% 
+  st_transform(crs=3414)
+```
+
+```{r}
+head(mpsz19,10) %>%
+  kbl() %>%
+  kable_styling(
+    full_width = F, 
+    bootstrap_options = c("condensed", "responsive"))
+```
+
+##  **Hexagon Layer **
+
+```{r}
+
+hx_grid = st_make_grid(busstop, cellsize = 750, what = "polygons", square = FALSE)
+
+hx_grid_sf = st_sf(hx_grid) %>%
+  rowid_to_column("hex_id")
+
+hx_grid_sf$count_busstop = lengths(st_intersects(hx_grid_sf, busstop))
+
+count_busstop = filter(hx_grid_sf, count_busstop > 0)
+
+count_busstop
+
+```
+
+### Data Hygiene
+
+```{r}
+busstop_hx <- st_intersection(busstop, count_busstop) %>% 
+  select(BUS_STOP_N, LOC_DESC,hex_id, count_busstop)
+
+busstop_hx
+```
+
+```{r}
+busstop_hx_test <- busstop_hx
+busstop_hx <- busstop_hx  %>% 
+  st_drop_geometry()
+
+datatable(busstop_hx, class = 'cell-border stripe', options = list(pageLength = 5))
+```
+
+The outcomes indicated above reveal that each bus stop is positioned within at least one of the hexagonal grids.
+
+# O-D Matrix generation
+
+To generate the O-D Matrix, a left join is performed twice between the **`wd_morning`** and **`busstop_hx`** dataframes. \
+\
+First up, the **`hex_id`**from the **`busstop_hx`** dataframe is merged into the **`wd_morning`** dataframe. This process adds the fields **`ORIGIN_GRID_ID`** and **`ORIGIN_LOC_DESC`** (to be used later in a tooltip) from **`busstop_hx`** into **`wd_morning`** .
+
+```{r}
+odmat <- left_join(wd_morning  , busstop_hx,
+            by = c("ORIGIN_PT_CODE" = "BUS_STOP_N")) %>%
+  rename(O_BUSSTOP = ORIGIN_PT_CODE,
+         O_HEX_ID = hex_id,
+         D_BUSSTOP = DESTINATION_PT_CODE,
+         O_LOC_DESC= LOC_DESC)
+```
+
+```{r}
+odmat
+```
+
+```{r}
+duplicate <- odmat %>%
+  group_by_all() %>% 
+  #group_by(O_BUSSTOP, D_BUSSTOP) %>%
+  filter(n()>1) %>%
+  ungroup()
+
+duplicate
+```
+
+Nothing was gained or loss during the join, the number of rows remain the same. We have also added a layer of checks to double check that there are indeed no duplicates within **`odmat`** at this point.
+
+```{r}
+odmat <- left_join(odmat, busstop_hx,
+            by = c("D_BUSSTOP" = "BUS_STOP_N")) %>%
+  rename(D_HEX_ID = hex_id,
+         D_LOC_DESC = LOC_DESC,
+         O_Count_BS = count_busstop.x,
+         D_Count_BS = count_busstop.y) 
+```
+
+```{r}
+odmat
+```
+
+```{r}
+duplicate <- odmat %>%
+  group_by_all() %>% 
+  #group_by(O_BUSSTOP, D_BUSSTOP) %>%
+  filter(n()>1) %>%
+  ungroup()
+
+duplicate
+```
+
+Once again, nothing was gained or loss during the join, the number of rows remain the same. We have also verified once more that there are indeed no duplicates within **`odmat`** at this point.\
+
+```{r}
+# Count of NA values in each column
+na_count_origin = sum(is.na(odmat$O_HEX_ID))
+na_count_destin = sum(is.na(odmat$D_HEX_ID))
+
+# Filter rows with NA values in either column
+odmat_with_na <- odmat %>%
+  filter(is.na(O_HEX_ID) | is.na(D_HEX_ID))
+
+# View first few rows of filtered data
+head_na_rows <- head(odmat_with_na)
+
+# Count of NA values across all columns
+na_count_all_columns <- colSums(is.na(odmat))
+
+# Proportion of NA values in each column
+na_prop_origin = mean(is.na(odmat$O_HEX_ID))
+na_prop_destin = mean(is.na(odmat$D_HEX_ID))
+
+# Tidy summary using dplyr
+na_summary <- odmat %>%
+  summarise(across(c(O_HEX_ID, D_HEX_ID), ~sum(is.na(.))))
+
+# Print results
+print(paste("NA count in O_HEX_ID:", na_count_origin))
+print(paste("NA count in O_HEX_ID:", na_count_destin))
+print("First few rows with NA values:")
+print(head_na_rows)
+print("NA count across all columns:")
+print(na_count_all_columns)
+print(paste("Proportion of NA in O_HEX_ID:", na_prop_origin))
+print(paste("Proportion of NA in D_HEX_ID:", na_prop_destin))
+print("Summary of NA counts in specified columns:")
+print(na_summary)
+
+```
+
+As shown above, there are rows with null values in **`odmat`** we will now drop them
+
+```{r}
+# Removing rows with NA values
+odmat <- odmat %>%
+  drop_na()
+
+```
+
+```{r}
+odmat
+```
+
+Group the data by 'O_HEX_ID' and 'D_HEX_ID', and then create a new field named 'WD_MORNING'. This field should represent the total number of trips made between each unique pair of hexagons, where 'i' stands for the origin hexagon and 'j' for the destination hexagon.
+
+```{r}
+odmat <- odmat %>%
+  group_by(O_HEX_ID, D_HEX_ID) %>%
+  summarise(WD_MORNING = sum(TRIPS),
+            O_DESC = paste(unique(O_LOC_DESC), collapse = ', '),
+            D_DESC = paste(unique(D_LOC_DESC), collapse = ', ')) %>% 
+  ungroup()
+```
+
+```{r}
+odmat
+```
+
+Next, our focus is on calculating the distance (DIST) between each pair of hexagons for the purpose of creating visualizations that provide more clarity on the task's landscape.
+
+# Distance Matrix  
+
+The `as.Spatial()` function is first employed to transform the **`count_busstop`** dataframe, which is currently a sf (simple features) tibble, into a **SpatialPolygonsDataFrame** (an object type from the `sp` package). This package is utilized because it is more efficient in computing the distance matrix than the `sf` package. Subsequently, the `spDists()` function from the `sp` package will be utilized to calculate the Euclidean distances between the center points of each hexagon. Lastly, we will
+
+```{r}
+count_busstop_sp <- as(count_busstop, "Spatial")
+```
+
+```{r}
+dist <- sp::spDists(count_busstop_sp, 
+                longlat = FALSE)
+head(dist, n=c(4, 4))
+```
+
+```{r}
+#rename to attach hex_id for future steps
+hex_id_rename <- count_busstop$hex_id
+
+colnames(dist) <- paste0(hex_id_rename)
+rownames(dist) <- paste0(hex_id_rename)
+dist[1:4,1:4]
+```
+
+## Pivot to Table
+
+\
+Next, we pviot the distance matrix (wide) to form a table (long).
+
+For this task, the `melt()` function from the `reshape2` package will be employed. To do so, the function creates a dataframe where each row corresponds to a unique combination of row and column indices from the matrix, along with their respective values.
+
+```{r}
+dist_pairs <- reshape2::melt(dist) %>%
+  rename(dist = value)
+head(dist_pairs, 10)
+```
+
+```{r}
+head(dist_pairs,10) %>%
+  kbl() %>%
+  kable_styling(
+    full_width = F, 
+    bootstrap_options = c("condensed", "responsive"))
+```
+
+```{r}
+dist_pairs
+```
+
+**Footnote:** 695,556 is derived from the original 834 rows squared, which is the max number of permutations.
+
+```{r}
+# Check if there are any rows where dist equals 0 and count them
+any_zero_distances <- any(dist_pairs $dist == 0)
+count_zero_distances <- sum(dist_pairs $dist == 0)
+
+# Print the results
+print(paste("Any zero distances:", any_zero_distances))
+print(paste("Count of zero distances:", count_zero_distances))
+
+
+```
+
+We will filter out data where **`dist_pairs`** = 0, as those values will not reap any meaningful insights at all.
+
+```{r}
+dist_pairs %>%
+  filter(dist > 0) %>%
+  summary()
+```
+
+```{r}
+dist_pairs$dist <- ifelse(dist_pairs$dist == 0,
+                        325, dist_pairs$dist)
+
+dist_pairs <- dist_pairs %>%
+  rename(O_HEX_ID = Var1,
+         D_HEX_ID = Var2)
+
+head(dist_pairs,10) %>%
+  kbl() %>%
+  kable_styling(
+    full_width = F, 
+    bootstrap_options = c("condensed", "responsive"))
+```
+
+We set the intra-zonal distance to be apothem of 325 apothem
