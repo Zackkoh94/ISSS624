@@ -91,7 +91,7 @@ The R packages used for the analysis are as follows:
 -   [**performance**](https://easystats.github.io/performance/)**:** for computing measures to assess model quality, which are not directly provided by R's 'base' or 'stats' packages. The primary goal of the **performance** package is to provide utilities for computing indices of model quality and goodness of fit. These include measures like r-squared (R2), root mean squared error (RMSE)
 
     ```{r}
-    pacman::p_load(sf, sfdep, tmap, tidyverse, plotly, zoo, Kendall, kableExtra, ggrain, DT, ggplot2, gridExtra,stplanr, performance, dplyr)
+    pacman::p_load(sf, sfdep, sp, tmap, tidyverse, plotly, zoo, Kendall, kableExtra, ggrain, DT, ggplot2, gridExtra,stplanr, performance, dplyr)
     ```
 
 # Data Description
@@ -486,6 +486,10 @@ odmat <- odmat %>%
 ```
 
 ```{r}
+glimpse(odmat)
+```
+
+```{r}
 odmat_num_rows <- nrow(odmat)
 print(odmat_num_rows)
 ```
@@ -740,3 +744,51 @@ tm_shape(mpsz19) +
   tm_compass(type="8star", size = 2) +
   tm_scale_bar()
 ```
+
+# **Preparing Origin and Destination Attributes**
+
+## Addtional Data for Propulsiveness and Attractiveness
+
+### Aspatial
+
+```{r}
+hdb <- read.csv("data/aspatial/hdb.csv")
+```
+
+```{r}
+coordinates <- hdb[, c("lng", "lat")]  
+coordinates <- as.matrix(coordinates)  
+spatial_points <- SpatialPointsDataFrame(coords = coordinates, data = hdb)
+
+```
+
+```{r}
+hdb_sf <- st_as_sf(hdb,
+                   coords = c("lng", "lat"),
+                   crs = 4326) %>%
+  st_transform(crs = 3414)
+
+# visualize the output
+tm_shape(mpsz19)+
+  tm_polygons(col = 'white', alpha = 0.01) +
+  tm_shape(hdb_sf) +
+  tm_dots(col = 'lightblue',
+          id = 'building') +
+  tm_layout(main.title = 'HDB Distribution Map', main.title.position = "center")
+```
+
+### Geospatial
+
+```{r}
+TrainStation <- st_read(dsn="data/geospatial", layer = "RapidTransitSystemStation") %>%    st_transform(crs = 3414)
+```
+
+Attract:\
+Business\
+School\
+Retail\
+\
+Propulsive:\
+train\
+distance\
+Residential
