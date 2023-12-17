@@ -749,10 +749,34 @@ tm_shape(mpsz19) +
 
 ## Addtional Data for Propulsiveness and Attractiveness
 
+-   Propulsive attributes are characteristics that motivate or instigate movement away from a particular place, linked to the starting point of travel. They symbolize the circumstances that exert a "push" effect on entities, prompting them to leave their current position.
+
+-   Conversely, attractive attributes are elements that draw or lure entities to a certain place. They are connected with the journey's end point and epitomize the qualities that render a destination desirable.
+
 ### Aspatial
 
+#### Residential data (Attractive) 
+
+The Weekday morning peak is a time frame where most have to get up about to do their business, whether it is going to school or work. Hence, using residential HDB data as a proxy for human density, we attempt to look at the data's Attractive capabilities
+
 ```{r}
-hdb <- read.csv("data/aspatial/hdb.csv")
+hdb <- read_csv('data/aspatial/hdb.csv') %>% 
+  filter(residential == "Y") %>% 
+  mutate(total_rental_ct = `1room_rental`*1 + `2room_rental`*2 + `3room_rental`*3 + `other_room_rental`*4,
+         total_1room_ct = `1room_sold`,
+         total_2room_ct = `2room_sold`*2,
+         total_3room_ct = `3room_sold`*10,
+         total_4room_ct = `4room_sold`*21,
+         total_5room_ct = `5room_sold`*13,
+         total_exec_ct = `exec_sold`*4,
+         total_multi_ct = `multigen_sold`*13,
+         total_studio_ct = `studio_apartment_sold`,
+         total_owner_ct = `1room_sold`*1 + `2room_sold`*2 + `3room_sold`*10 + `4room_sold`*21 + `5room_sold`*13 + `exec_sold`*4 + `multigen_sold`*13 + `studio_apartment_sold`*1) %>% 
+  select(blk_no, street, total_rental_ct, total_1room_ct, total_1room_ct,total_2room_ct,total_3room_ct,total_4room_ct,total_5room_ct,total_exec_ct,total_multi_ct, total_studio_ct,total_owner_ct, lat, lng)
+```
+
+```{r}
+glimpse(hdb)
 ```
 
 ```{r}
@@ -777,6 +801,38 @@ tm_shape(mpsz19)+
   tm_layout(main.title = 'HDB Distribution Map', main.title.position = "center")
 ```
 
+```{r}
+summary(hdb_sf)
+```
+
+#### Business (Attractiveness) 
+
+The Weekday morning peak is a time frame where most have to get up to head to work. Hence using business geographic density, we attempt to look at the data's Attractiveness capabilities
+
+```{r}
+business <- st_read(dsn = "data/geospatial",
+                    layer = "Business") %>%
+          st_transform(crs = 3414)
+```
+
+```{r}
+head(business,10) %>%
+  kbl() %>%
+  kable_styling(
+    full_width = F, 
+    bootstrap_options = c("condensed", "responsive"))
+```
+
+```{r}
+# visualize the output
+# visualize the output
+tm_shape(mpsz19)+
+  tm_polygons(alpha = 0.01)+
+  tm_shape(business)+
+  tm_dots(col = 'red') +
+  tm_layout(main.title = 'Business Distribution Map', main.title.position = "center")
+```
+
 ### Geospatial
 
 ```{r}
@@ -786,9 +842,10 @@ TrainStation <- st_read(dsn="data/geospatial", layer = "RapidTransitSystemStatio
 Attract:\
 Business\
 School\
-Retail\
+residential\
 \
 Propulsive:\
 train\
-distance\
-Residential
+distance
+
+\
